@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Game {
   placeId: string
@@ -39,6 +40,7 @@ const SORT_OPTIONS = [
 ]
 
 export default function EmergingStarsPage() {
+  const router = useRouter()
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +53,7 @@ export default function EmergingStarsPage() {
   const [savedGames, setSavedGames] = useState<string[]>([])
   const [savingGame, setSavingGame] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('breakout')
+  const [analyzingGame, setAnalyzingGame] = useState<string | null>(null)
 
   const saveGame = async (game: Game) => {
     setSavingGame(game.placeId)
@@ -68,6 +71,28 @@ export default function EmergingStarsPage() {
       console.error('Failed to save game:', err)
     } finally {
       setSavingGame(null)
+    }
+  }
+
+  // Auto-find similar games and go to analyze page
+  const analyzeWithSimilar = async (game: Game) => {
+    setAnalyzingGame(game.placeId)
+    try {
+      // Find similar games automatically
+      const res = await fetch(`/api/find-similar?placeId=${game.placeId}&limit=4`)
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Failed to find similar')
+
+      // Navigate to analyze page with all the place IDs
+      const allIds = data.allPlaceIds || [game.placeId]
+      router.push(`/analyze?ids=${allIds.join(',')}&name=${encodeURIComponent(data.detectedVertical + ' - ' + game.name)}`)
+    } catch (err) {
+      console.error('Failed to find similar games:', err)
+      // Fallback: just analyze this one game
+      router.push(`/analyze?ids=${game.placeId}&name=${encodeURIComponent(game.name)}`)
+    } finally {
+      setAnalyzingGame(null)
     }
   }
 
@@ -364,6 +389,19 @@ export default function EmergingStarsPage() {
                     </div>
                   </div>
 
+                  {/* Analyze Button - Main CTA */}
+                  <button
+                    onClick={() => analyzeWithSimilar(game)}
+                    disabled={analyzingGame === game.placeId}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
+                      analyzingGame === game.placeId
+                        ? 'bg-green-700 text-green-300 cursor-wait'
+                        : 'bg-green-600 hover:bg-green-500 text-white'
+                    }`}
+                  >
+                    {analyzingGame === game.placeId ? 'Finding Similar...' : 'Analyze'}
+                  </button>
+
                   {/* Save Button */}
                   <button
                     onClick={() => saveGame(game)}
@@ -373,22 +411,10 @@ export default function EmergingStarsPage() {
                         ? 'bg-green-500/20 text-green-400 cursor-default'
                         : savingGame === game.placeId
                         ? 'bg-gray-700 text-gray-400 cursor-wait'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white'
+                        : 'bg-gray-700 hover:bg-gray-600 text-white'
                     }`}
                   >
                     {savedGames.includes(game.placeId) ? 'Saved' : savingGame === game.placeId ? '...' : 'Save'}
-                  </button>
-
-                  {/* Select Checkbox */}
-                  <button
-                    onClick={() => toggleSelect(game.placeId)}
-                    className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-green-500 border-green-500 text-black'
-                        : 'border-gray-600 hover:border-gray-400'
-                    }`}
-                  >
-                    {isSelected && <span className="text-sm font-bold">&#10003;</span>}
                   </button>
                 </div>
 

@@ -120,8 +120,14 @@ function AnalyzeContent() {
 
   useEffect(() => {
     const ids = searchParams.get('ids')
+    const name = searchParams.get('name')
+
     if (ids) {
       setPlaceIds(ids)
+      if (name) {
+        setGroupName(decodeURIComponent(name))
+      }
+      // Auto-trigger analysis when coming from emerging page
       setTimeout(() => {
         document.getElementById('analyze-btn')?.click()
       }, 100)
