@@ -55,29 +55,40 @@ function detectTheme(name: string, description: string): string {
 function buildSearchKeywords(vertical: string, theme: string, name: string): string[] {
   const keywords: string[] = []
 
+  // Extract key words from the game name itself
+  const nameWords = name.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !['game', 'the', 'for', 'and'].includes(w))
+
+  // Add the most distinctive word from the name
+  if (nameWords.length > 0) {
+    keywords.push(nameWords[0])
+  }
+
   // Vertical-based keywords
   const verticalKeywords: Record<string, string[]> = {
-    'simulator': ['simulator 2025', 'simulator new', 'sim game'],
-    'tower-defense': ['tower defense', 'td game', 'defenders'],
-    'tycoon': ['tycoon', 'tycoon 2025', 'business simulator'],
-    'obby': ['obby', 'parkour', 'obstacle course'],
-    'horror': ['horror game', 'scary game', 'horror 2025'],
-    'rpg': ['rpg roblox', 'sword game', 'dungeon game'],
-    'pet': ['pet simulator', 'pet game', 'hatching game'],
-    'roleplay': ['roleplay', 'rp game', 'life simulator'],
-    'fighting': ['fighting game', 'pvp game', 'battle game'],
-    'racing': ['racing game', 'car game', 'driving game'],
-    'other': ['new game', 'popular game']
+    'simulator': ['simulator', 'simulator 2025'],
+    'tower-defense': ['tower defense', 'defenders', 'anime defenders'],
+    'tycoon': ['tycoon', 'tycoon 2025'],
+    'obby': ['obby', 'parkour'],
+    'horror': ['horror', 'scary', 'backrooms'],
+    'rpg': ['rpg', 'sword', 'dungeon'],
+    'pet': ['pet simulator', 'hatching'],
+    'roleplay': ['roleplay', 'brookhaven'],
+    'fighting': ['fighting', 'pvp', 'battle'],
+    'racing': ['racing', 'car', 'driving'],
+    'other': ['escape', 'run', 'survive']
   }
 
   // Theme-based keywords
   const themeKeywords: Record<string, string[]> = {
     'anime': ['anime', 'anime game'],
-    'brainrot': ['brainrot', 'skibidi', 'meme game'],
+    'brainrot': ['brainrot', 'skibidi', 'toilet tower'],
     'horror': ['horror', 'scary'],
-    'cute': ['cute game', 'kawaii'],
-    'military': ['military', 'war game'],
-    'scifi': ['space game', 'sci-fi'],
+    'cute': ['cute', 'kawaii'],
+    'military': ['military', 'war'],
+    'scifi': ['space', 'galaxy'],
     'fantasy': ['fantasy', 'magic game'],
     'general': []
   }
@@ -209,7 +220,43 @@ export async function GET(request: Request) {
       }
     }
 
-    // Step 5: Score and rank similar games
+    // Step 5: If not enough games found, try emerging API as fallback
+    if (allGames.length < limit) {
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000'
+        const emergingRes = await fetch(`${baseUrl}/api/emerging?limit=20&minCcu=100`)
+        if (emergingRes.ok) {
+          const emergingData = await emergingRes.json()
+          const emergingGames = emergingData.games || []
+
+          for (const eg of emergingGames) {
+            if (!seenIds.has(eg.placeId) && eg.placeId !== placeId) {
+              seenIds.add(eg.placeId)
+              allGames.push({
+                placeId: eg.placeId,
+                universeId: eg.universeId,
+                name: eg.name,
+                description: '',
+                genre: eg.genre || '',
+                creator: eg.creator,
+                metrics: {
+                  visits: eg.metrics?.visits || 0,
+                  currentPlayers: eg.metrics?.currentPlayers || 0,
+                  likeRatio: eg.metrics?.likeRatio || '0',
+                  estimatedRevenue: eg.metrics?.estimatedRevenue || 0
+                }
+              })
+            }
+          }
+        }
+      } catch (emergingErr) {
+        console.log('Emerging fallback failed:', emergingErr)
+      }
+    }
+
+    // Step 6: Score and rank similar games
     const scoredGames = allGames.map(game => {
       const gameVertical = detectVertical(game.name, game.description)
       const gameTheme = detectTheme(game.name, game.description)
