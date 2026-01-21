@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# Output
+output/
+*.log
+
+# Data (optional - uncomment to include in repo)
+# data/games/
+# data/groups/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Next.js
+.next/
+out/
+
+# Playwright
+.playwright-mcp/
+
+# Vercel
+.vercel
+
+# Misc
+nul

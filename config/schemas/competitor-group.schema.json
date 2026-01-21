@@ -1,0 +1,258 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Roblox Competitor Group Classification Schema",
+  "description": "Structural characteristics for classifying Roblox games into competitor groups",
+  "type": "object",
+  "properties": {
+    "groupId": {
+      "type": "string",
+      "description": "Unique identifier for the competitor group (e.g., 'SP1', 'anime-pet-sim')"
+    },
+    "groupName": {
+      "type": "string",
+      "description": "Human-readable name for the competitor group"
+    },
+    "structuralCharacteristics": {
+      "type": "object",
+      "properties": {
+        "genre": {
+          "type": "string",
+          "description": "Primary Roblox genre classification",
+          "enum": [
+            "Action",
+            "Adventure",
+            "Education",
+            "Entertainment",
+            "Obby & Platformer",
+            "Party & Casual",
+            "Puzzle",
+            "RPG",
+            "Roleplay & Avatar Sim",
+            "Shooter",
+            "Shopping",
+            "Simulation",
+            "Social",
+            "Sports & Racing",
+            "Strategy",
+            "Survival",
+            "Utility & Other"
+          ]
+        },
+        "subGenre": {
+          "type": "string",
+          "description": "Sub-genre within the primary genre",
+          "examples": [
+            "Incremental Simulator",
+            "Tycoon",
+            "Tower Defense",
+            "Battle Royale",
+            "Life Roleplay",
+            "Tower Obby",
+            "Action RPG"
+          ]
+        },
+        "theme": {
+          "type": "string",
+          "description": "Visual/narrative theme of the game",
+          "examples": [
+            "Anime",
+            "Horror",
+            "Medieval",
+            "Sci-Fi",
+            "Meme/Comedy",
+            "Realistic",
+            "Fantasy",
+            "Military",
+            "Sports",
+            "Food/Restaurant"
+          ]
+        },
+        "coreLoop": {
+          "type": "string",
+          "description": "Primary gameplay loop pattern",
+          "examples": [
+            "Collect → Upgrade → Prestige",
+            "Build → Manage → Expand",
+            "Fight → Loot → Level Up",
+            "Explore → Discover → Complete",
+            "Social → Trade → Customize",
+            "Survive → Escape → Win"
+          ]
+        },
+        "monetizationModel": {
+          "type": "string",
+          "description": "Primary revenue strategy",
+          "enum": [
+            "Gamepass Heavy",
+            "Robux Shop",
+            "Premium Benefits",
+            "Donation-Based",
+            "Ad-Supported",
+            "Subscription",
+            "Hybrid"
+          ]
+        },
+        "sessionDesign": {
+          "type": "string",
+          "description": "Typical session length and engagement pattern",
+          "enum": [
+            "Quick Sessions (5-10 min)",
+            "Medium Sessions (15-30 min)",
+            "Grind Sessions (30+ min)",
+            "Social Hangout (variable)",
+            "Event-Driven (specific times)"
+          ]
+        },
+        "artStyle": {
+          "type": "string",
+          "description": "Visual aesthetic of the game",
+          "enum": [
+            "Low-Poly Stylized",
+            "Realistic/HD",
+            "Anime/Manga",
+            "Cartoony",
+            "Horror/Dark",
+            "Retro/Pixel",
+            "Minimalist",
+            "Mixed/Hybrid"
+          ]
+        },
+        "uiPattern": {
+          "type": "string",
+          "description": "Dominant UI/UX design pattern",
+          "enum": [
+            "Simulator UI (rebirth, multipliers, pets)",
+            "RPG UI (inventory, stats, quests)",
+            "Tycoon UI (money, upgrades, automation)",
+            "Social UI (chat, emotes, customization)",
+            "Minimal UI (immersive)",
+            "Mobile-First UI"
+          ]
+        },
+        "targetDemographic": {
+          "type": "object",
+          "properties": {
+            "primaryAge": {
+              "type": "string",
+              "enum": ["6-9", "10-12", "13-15", "16-18", "18+", "All Ages"]
+            },
+            "gender": {
+              "type": "string",
+              "enum": ["Male-Leaning", "Female-Leaning", "Neutral"]
+            },
+            "playerType": {
+              "type": "string",
+              "enum": ["Casual", "Mid-Core", "Hardcore", "Social"]
+            }
+          }
+        },
+        "keyMechanics": {
+          "type": "array",
+          "description": "Core gameplay mechanics that define this group",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["Pet System", "Trading", "Rebirth/Prestige"],
+            ["Tower Placement", "Wave Defense", "Upgrades"],
+            ["Building", "Economy", "Automation"]
+          ]
+        }
+      },
+      "required": ["genre", "subGenre", "coreLoop"]
+    },
+    "qualificationCriteria": {
+      "type": "object",
+      "description": "Metrics used to qualify this as a viable competitor group",
+      "properties": {
+        "minimumMonthlyRevenue": {
+          "type": "number",
+          "description": "Minimum estimated monthly revenue in USD",
+          "default": 10000
+        },
+        "maxGroupAge": {
+          "type": "number",
+          "description": "Maximum months since first successful game in group",
+          "default": 24
+        },
+        "recentSuccessCount": {
+          "type": "number",
+          "description": "Minimum games started in last 6 months that succeeded",
+          "default": 2
+        },
+        "qualityBeatThreshold": {
+          "type": "number",
+          "description": "Percentage improvement needed to compete",
+          "default": 20
+        }
+      }
+    },
+    "competitors": {
+      "type": "array",
+      "description": "Games identified as competitors in this group",
+      "items": {
+        "$ref": "#/definitions/competitor"
+      }
+    }
+  },
+  "definitions": {
+    "competitor": {
+      "type": "object",
+      "properties": {
+        "gameId": {
+          "type": "string",
+          "description": "Roblox Universe ID"
+        },
+        "placeId": {
+          "type": "string",
+          "description": "Roblox Place ID"
+        },
+        "name": {
+          "type": "string"
+        },
+        "creator": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "type": { "type": "string", "enum": ["User", "Group"] }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "visits": { "type": "number" },
+            "favorites": { "type": "number" },
+            "currentPlayers": { "type": "number" },
+            "peakPlayers": { "type": "number" },
+            "likes": { "type": "number" },
+            "dislikes": { "type": "number" },
+            "likeRatio": { "type": "number" },
+            "estimatedRevenue": { "type": "number" },
+            "avgCCU": { "type": "number" }
+          }
+        },
+        "dates": {
+          "type": "object",
+          "properties": {
+            "created": { "type": "string", "format": "date" },
+            "lastUpdated": { "type": "string", "format": "date" }
+          }
+        },
+        "isEmergingStar": {
+          "type": "boolean",
+          "description": "Game started recently and showing strong growth"
+        },
+        "qualityScore": {
+          "type": "number",
+          "description": "Subjective quality rating 1-10"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": ["gameId", "name"]
+    }
+  },
+  "required": ["groupId", "groupName", "structuralCharacteristics"]
+}

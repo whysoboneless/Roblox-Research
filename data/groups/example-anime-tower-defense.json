@@ -1,0 +1,163 @@
+{
+  "groupId": "simulation-tower-defense-anime",
+  "groupName": "Anime Tower Defense",
+  "structuralCharacteristics": {
+    "genre": "Strategy",
+    "subGenre": "Tower Defense",
+    "theme": "Anime",
+    "coreLoop": "Place → Upgrade → Defend",
+    "template": "Anime + Tower Defense",
+    "monetizationModel": "Hybrid",
+    "sessionDesign": "Medium Sessions (15-30 min)",
+    "artStyle": "Anime/Manga",
+    "uiPattern": "RPG UI (inventory, stats, quests)",
+    "targetDemographic": {
+      "primaryAge": "10-12",
+      "gender": "Male-Leaning",
+      "playerType": "Mid-Core"
+    },
+    "keyMechanics": [
+      "Character/Tower Placement",
+      "Gacha/Summon System",
+      "Character Upgrades",
+      "Wave-based Combat",
+      "Multiplayer Co-op"
+    ]
+  },
+  "qualificationCriteria": {
+    "minimumMonthlyRevenue": 10000,
+    "maxGroupAge": 24,
+    "recentSuccessCount": 2,
+    "qualityBeatThreshold": 20
+  },
+  "competitors": [
+    {
+      "gameId": "4996049426",
+      "placeId": "4996049426",
+      "name": "Anime Adventures",
+      "creator": {
+        "id": "11261797",
+        "name": "Gomu",
+        "type": "Group"
+      },
+      "metrics": {
+        "visits": 8500000000,
+        "favorites": 12500000,
+        "currentPlayers": 45000,
+        "peakPlayers": 250000,
+        "likes": 2800000,
+        "dislikes": 180000,
+        "likeRatio": "93.9",
+        "estimatedRevenue": 500000,
+        "avgCCU": 50000
+      },
+      "dates": {
+        "created": "2022-01-15",
+        "lastUpdated": "2025-12-15"
+      },
+      "isEmergingStar": false,
+      "qualityScore": 9,
+      "notes": "Market leader. High production value, frequent updates, strong anime IP integration."
+    },
+    {
+      "gameId": "4587034896",
+      "placeId": "4587034896",
+      "name": "All Star Tower Defense",
+      "creator": {
+        "id": "5765006",
+        "name": "Top Down Games",
+        "type": "Group"
+      },
+      "metrics": {
+        "visits": 12000000000,
+        "favorites": 15000000,
+        "currentPlayers": 35000,
+        "peakPlayers": 400000,
+        "likes": 3500000,
+        "dislikes": 250000,
+        "likeRatio": "93.3",
+        "estimatedRevenue": 400000,
+        "avgCCU": 40000
+      },
+      "dates": {
+        "created": "2020-06-20",
+        "lastUpdated": "2025-12-10"
+      },
+      "isEmergingStar": false,
+      "qualityScore": 8,
+      "notes": "Original genre pioneer. Massive player base but older codebase."
+    },
+    {
+      "gameId": "14255526359",
+      "placeId": "14255526359",
+      "name": "Anime Defenders",
+      "creator": {
+        "id": "16212082",
+        "name": "Anime Defenders Studio",
+        "type": "Group"
+      },
+      "metrics": {
+        "visits": 3200000000,
+        "favorites": 4500000,
+        "currentPlayers": 80000,
+        "peakPlayers": 350000,
+        "likes": 980000,
+        "dislikes": 45000,
+        "likeRatio": "95.6",
+        "estimatedRevenue": 600000,
+        "avgCCU": 75000
+      },
+      "dates": {
+        "created": "2024-03-01",
+        "lastUpdated": "2025-12-18"
+      },
+      "isEmergingStar": true,
+      "qualityScore": 9.5,
+      "notes": "EMERGING STAR. Launched 2024, already competing with established games. Higher quality graphics and smoother gameplay than competitors."
+    },
+    {
+      "gameId": "8304191830",
+      "placeId": "8304191830",
+      "name": "Anime Last Stand",
+      "creator": {
+        "id": "14892065",
+        "name": "Anime Last Stand Team",
+        "type": "Group"
+      },
+      "metrics": {
+        "visits": 1800000000,
+        "favorites": 2800000,
+        "currentPlayers": 25000,
+        "peakPlayers": 150000,
+        "likes": 650000,
+        "dislikes": 35000,
+        "likeRatio": "94.9",
+        "estimatedRevenue": 200000,
+        "avgCCU": 28000
+      },
+      "dates": {
+        "created": "2023-08-15",
+        "lastUpdated": "2025-11-20"
+      },
+      "isEmergingStar": true,
+      "qualityScore": 8,
+      "notes": "EMERGING STAR. Differentiated with unique art style and story mode."
+    }
+  ],
+  "analysisNotes": {
+    "marketStatus": "Mature but still growing. High barrier to entry due to quality expectations.",
+    "opportunities": [
+      "Underserved anime IPs (newer anime like Spy x Family, Chainsaw Man)",
+      "Mobile-optimized gameplay (most competitors are desktop-focused)",
+      "Story/narrative focus (most are grind-focused)",
+      "Co-op emphasis over solo play"
+    ],
+    "risks": [
+      "Requires significant art assets",
+      "High player expectations from established games",
+      "Frequent update cadence required",
+      "Potential IP/copyright concerns with anime characters"
+    ],
+    "recommendedApproach": "Enter with a specific anime IP focus not covered by competitors, or innovate on gameplay mechanics (story mode, PvP, unique progression)."
+  }
+}

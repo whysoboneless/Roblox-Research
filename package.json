@@ -1,0 +1,57 @@
+{
+  "name": "roblox-research-tool",
+  "version": "1.0.0",
+  "description": "Market research tool for identifying qualified competitor groups and trends on Roblox",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "next dev",
+    "build": "next build",
+    "web": "next start",
+    "discover": "node src/cli/discover.js",
+    "analyze": "node src/cli/analyze.js",
+    "qualify": "node src/cli/qualify.js",
+    "collect": "node src/cli/collect.js",
+    "report": "node src/cli/report.js",
+    "sync": "node src/cli/sync.js",
+    "track": "node src/cli/track.js",
+    "db:test": "node src/db/test-connection.js",
+    "cli:dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "roblox",
+    "market-research",
+    "game-analytics",
+    "competitor-analysis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.1",
+    "inquirer": "^9.2.0",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "ora": "^7.0.0",
+    "date-fns": "^3.0.0",
+    "glob": "^10.3.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "recharts": "^2.12.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}

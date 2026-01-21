@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Roblox Game Pattern Classification Schema",
+  "description": "Classification system for identifying successful game patterns (analogous to Video Series in digital media)",
+  "type": "object",
+  "properties": {
+    "patternId": {
+      "type": "string",
+      "description": "Unique identifier for this game pattern"
+    },
+    "patternName": {
+      "type": "string",
+      "description": "Human-readable name for this pattern"
+    },
+    "patternClassification": {
+      "type": "object",
+      "description": "Hierarchical classification of the game pattern",
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "The overarching game template/formula (analogous to Video Bucket)",
+          "examples": [
+            "X Simulator",
+            "Anime + Tower Defense",
+            "Horror Multiplayer",
+            "Tycoon + Automation",
+            "Obby + Story",
+            "RPG + Gacha",
+            "Social + Roleplay"
+          ]
+        },
+        "mechanic": {
+          "type": "string",
+          "description": "The core mechanic pattern (analogous to Video Theme)",
+          "examples": [
+            "Click to collect → Pet assists → Rebirth for multipliers",
+            "Place towers → Upgrade → Unlock new towers",
+            "Hide and seek with asymmetric roles",
+            "Build factory → Automate → Expand",
+            "Explore world → Complete quests → Level up"
+          ]
+        },
+        "variation": {
+          "type": "string",
+          "description": "The specific variation/theme applied (analogous to Video Topic)",
+          "examples": [
+            "Anime characters (Naruto, One Piece, Dragon Ball)",
+            "Food/Restaurant theme",
+            "Military/Warfare theme",
+            "Pet collection (realistic vs fantasy)",
+            "Sports integration (NBA, Soccer)"
+          ]
+        }
+      },
+      "required": ["template", "mechanic"]
+    },
+    "successMetrics": {
+      "type": "object",
+      "description": "What makes this pattern successful",
+      "properties": {
+        "retentionDrivers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What keeps players coming back",
+          "examples": [
+            ["Daily rewards", "Limited-time events", "Trading economy"],
+            ["Leaderboards", "Competitive seasons", "Clan wars"]
+          ]
+        },
+        "monetizationHooks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What drives revenue",
+          "examples": [
+            ["VIP gamepass", "Pet storage", "Auto-collect"],
+            ["Battle pass", "Exclusive characters", "Fast travel"]
+          ]
+        },
+        "viralMechanics": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What drives organic growth",
+          "examples": [
+            ["Trading system", "Referral rewards", "Group bonuses"],
+            ["UGC integration", "Shareable moments", "Competitions"]
+          ]
+        }
+      }
+    },
+    "updatePatterns": {
+      "type": "object",
+      "description": "How successful games in this pattern maintain engagement",
+      "properties": {
+        "updateFrequency": {
+          "type": "string",
+          "enum": ["Daily", "Weekly", "Bi-Weekly", "Monthly", "Event-Based"]
+        },
+        "typicalUpdates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Common update types for this pattern",
+          "examples": [
+            ["New area/world", "New characters/pets", "Seasonal event"],
+            ["Balance changes", "New weapons", "Quality of life"]
+          ]
+        },
+        "eventCadence": {
+          "type": "string",
+          "description": "How often major events occur",
+          "examples": ["Weekly mini-events, Monthly major events"]
+        }
+      }
+    },
+    "exampleGames": {
+      "type": "array",
+      "description": "Games that exemplify this pattern",
+      "items": {
+        "type": "object",
+        "properties": {
+          "gameId": { "type": "string" },
+          "name": { "type": "string" },
+          "why": { "type": "string", "description": "Why this exemplifies the pattern" }
+        }
+      }
+    },
+    "replicationGuide": {
+      "type": "object",
+      "description": "How to replicate this pattern successfully",
+      "properties": {
+        "coreRequirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Must-have elements"
+        },
+        "differentiators": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ways to stand out from existing games"
+        },
+        "commonPitfalls": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Mistakes to avoid"
+        },
+        "estimatedComplexity": {
+          "type": "string",
+          "enum": ["Low", "Medium", "High", "Very High"],
+          "description": "Development complexity"
+        }
+      }
+    }
+  },
+  "required": ["patternId", "patternName", "patternClassification"]
+}
