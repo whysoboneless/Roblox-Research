@@ -135,22 +135,26 @@ function getCuratedGames(query: string): string[] {
   return Array.from(ids)
 }
 
-// Better revenue estimation based on CCU and engagement
+// More realistic revenue estimation
+// Based on: ~$0.50-2.00 per 1000 daily visits depending on monetization quality
 function estimateRevenue(ccu: number, likeRatio: number, visits: number): number {
-  // Base: $2-5 per CCU per month depending on engagement
-  // High like ratio = better monetization
-  let revenuePerPlayer = 2.5
+  // Estimate daily visits from CCU (players cycle through during the day)
+  const estimatedDailyVisits = ccu * 15
 
-  if (likeRatio >= 90) revenuePerPlayer = 5.0
-  else if (likeRatio >= 80) revenuePerPlayer = 3.5
-  else if (likeRatio >= 70) revenuePerPlayer = 2.5
-  else if (likeRatio >= 60) revenuePerPlayer = 1.5
-  else revenuePerPlayer = 0.5
+  // Revenue per 1000 visits - higher engagement = better monetization
+  let revenuePerThousand = 0.50
+  if (likeRatio >= 95) revenuePerThousand = 2.00
+  else if (likeRatio >= 90) revenuePerThousand = 1.50
+  else if (likeRatio >= 80) revenuePerThousand = 1.00
+  else if (likeRatio >= 70) revenuePerThousand = 0.75
+  else if (likeRatio >= 60) revenuePerThousand = 0.50
+  else revenuePerThousand = 0.25
 
-  // Factor in visits for maturity bonus
-  const visitBonus = visits > 1_000_000_000 ? 1.5 : visits > 100_000_000 ? 1.2 : 1.0
+  // Mature games with proven track record get a small bonus
+  const maturityBonus = visits > 1_000_000_000 ? 1.3 : visits > 100_000_000 ? 1.15 : 1.0
 
-  return Math.round(ccu * revenuePerPlayer * 30 * visitBonus)
+  // Monthly: (daily visits / 1000) × rate × 30 days × maturity
+  return Math.round((estimatedDailyVisits / 1000) * revenuePerThousand * 30 * maturityBonus)
 }
 
 // Minimum quality thresholds

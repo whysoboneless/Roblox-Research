@@ -42,13 +42,24 @@ async function getGameDetails(universeIds: number[]) {
   }
 }
 
-// Estimate monthly revenue
+// Estimate monthly revenue - more conservative/realistic
+// Based on industry data: ~$0.50-2.00 per 1000 daily visits, varies by engagement
+// CCU to daily visits ratio is roughly 10-20x (players come and go throughout day)
 function estimateRevenue(ccu: number, likeRatio: number): number {
-  let revenuePerPlayer = 2.0
-  if (likeRatio > 90) revenuePerPlayer = 5.0
-  else if (likeRatio > 80) revenuePerPlayer = 3.5
-  else if (likeRatio < 70) revenuePerPlayer = 0.5
-  return Math.round(ccu * revenuePerPlayer * 30)
+  // Estimate daily visits from CCU (CCU × average sessions per day factor)
+  const estimatedDailyVisits = ccu * 15 // rough multiplier
+
+  // Revenue per 1000 visits based on engagement (like ratio as proxy)
+  let revenuePerThousand = 0.50 // base rate
+  if (likeRatio > 95) revenuePerThousand = 2.00 // exceptional engagement
+  else if (likeRatio > 90) revenuePerThousand = 1.50
+  else if (likeRatio > 80) revenuePerThousand = 1.00
+  else if (likeRatio < 70) revenuePerThousand = 0.25 // poor engagement
+
+  // Monthly revenue = (daily visits / 1000) × rate × 30 days
+  const monthlyRevenue = (estimatedDailyVisits / 1000) * revenuePerThousand * 30
+
+  return Math.round(monthlyRevenue)
 }
 
 // Calculate like ratio from votes

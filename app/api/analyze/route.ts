@@ -42,12 +42,17 @@ async function getGameThumbnails(universeIds: number[]) {
 }
 
 function estimateRevenue(ccu: number, likeRatio: number): number {
-  // Revenue estimation based on CCU and engagement
-  let revenuePerPlayer = 2.0 // mid-range default
-  if (likeRatio > 85) revenuePerPlayer = 5.0
-  else if (likeRatio < 70) revenuePerPlayer = 0.5
+  // More realistic revenue estimation
+  // Based on ~$0.50-2.00 per 1000 daily visits
+  const estimatedDailyVisits = ccu * 15 // CCU to daily visits multiplier
 
-  return Math.round(ccu * revenuePerPlayer * 30) // Monthly estimate
+  let revenuePerThousand = 0.50
+  if (likeRatio > 95) revenuePerThousand = 2.00
+  else if (likeRatio > 90) revenuePerThousand = 1.50
+  else if (likeRatio > 85) revenuePerThousand = 1.00
+  else if (likeRatio < 70) revenuePerThousand = 0.25
+
+  return Math.round((estimatedDailyVisits / 1000) * revenuePerThousand * 30)
 }
 
 function classifyGame(game: any) {
