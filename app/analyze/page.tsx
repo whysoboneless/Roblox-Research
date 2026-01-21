@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 interface Game {
   placeId: string
@@ -55,11 +56,24 @@ interface Analysis {
 }
 
 export default function AnalyzePage() {
+  const searchParams = useSearchParams()
   const [placeIds, setPlaceIds] = useState('')
   const [loading, setLoading] = useState(false)
   const [games, setGames] = useState<Game[]>([])
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [error, setError] = useState('')
+
+  // Auto-fill from URL params (from Discover page)
+  useEffect(() => {
+    const ids = searchParams.get('ids')
+    if (ids) {
+      setPlaceIds(ids)
+      // Auto-analyze if IDs provided
+      setTimeout(() => {
+        document.getElementById('analyze-btn')?.click()
+      }, 100)
+    }
+  }, [searchParams])
 
   const handleAnalyze = async () => {
     setError('')
