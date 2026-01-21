@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 
 const navItems = [
   { href: '/', label: 'Dashboard' },
+  { href: '/emerging', label: 'Emerging Stars' },
   { href: '/discover', label: 'Discover' },
   { href: '/analyze', label: 'Analyze' },
   { href: '/idea', label: 'Qualify Idea' },
-  { href: '/helper', label: 'Idea Helper' },
+  { href: '/groups', label: 'Groups' },
   { href: '/patterns', label: 'Patterns' },
 ]
 
@@ -20,8 +21,13 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🎮</span>
-            <span className="font-bold text-lg">Roblox Research</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">R</span>
+            </div>
+            <div>
+              <span className="font-bold text-lg">Roblox Research</span>
+              <span className="hidden sm:inline text-gray-500 text-xs ml-2">Market Intelligence</span>
+            </div>
           </Link>
 
           <div className="flex items-center gap-1">
