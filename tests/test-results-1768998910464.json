@@ -1,0 +1,242 @@
+{
+  "passed": 9,
+  "failed": 2,
+  "skipped": 0,
+  "logs": [
+    {
+      "timestamp": "2026-01-21T12:34:48.773Z",
+      "type": "info",
+      "message": "Starting API Integration Tests"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:48.776Z",
+      "type": "info",
+      "message": "Base URL: http://localhost:3000"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:48.776Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:34:48.776Z",
+      "type": "info",
+      "message": "Testing: GET /api/discover - Popular Games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:50.448Z",
+      "type": "info",
+      "message": "  Found 3 games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:50.448Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/discover - Popular Games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:50.448Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:34:51.959Z",
+      "type": "info",
+      "message": "Testing: GET /api/discover - Anime Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:52.486Z",
+      "type": "info",
+      "message": "  Found 0 anime games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:52.486Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/discover - Anime Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:52.486Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:34:53.996Z",
+      "type": "info",
+      "message": "Testing: GET /api/discover - Simulator Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:54.344Z",
+      "type": "info",
+      "message": "  Found 0 simulator games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:54.344Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/discover - Simulator Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:54.344Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:34:55.844Z",
+      "type": "info",
+      "message": "Testing: GET /api/emerging - Default Params"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:57.046Z",
+      "type": "info",
+      "message": "  Found 0 emerging games (0 total, 0 recent)"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:57.046Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/emerging - Default Params"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:57.046Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:34:58.558Z",
+      "type": "info",
+      "message": "Testing: GET /api/emerging - Simulator Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:59.431Z",
+      "type": "info",
+      "message": "  Found 0 emerging simulator games"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:59.431Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/emerging - Simulator Category"
+    },
+    {
+      "timestamp": "2026-01-21T12:34:59.431Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:00.938Z",
+      "type": "info",
+      "message": "Testing: POST /api/analyze - Single Game"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:00.982Z",
+      "type": "fail",
+      "message": "FAILED: POST /api/analyze - Single Game - Expected 200, got 404"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:00.982Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:02.484Z",
+      "type": "info",
+      "message": "Testing: POST /api/analyze - Multiple Games"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:02.608Z",
+      "type": "fail",
+      "message": "FAILED: POST /api/analyze - Multiple Games - Expected 200, got 404"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:02.608Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:04.113Z",
+      "type": "info",
+      "message": "Testing: POST /api/analyze - Invalid Input"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:04.120Z",
+      "type": "info",
+      "message": "  Correctly rejected invalid input"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:04.120Z",
+      "type": "pass",
+      "message": "PASSED: POST /api/analyze - Invalid Input"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:04.120Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:05.619Z",
+      "type": "info",
+      "message": "Testing: GET /api/groups - List Groups"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:05.626Z",
+      "type": "info",
+      "message": "  Found 1 saved groups"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:05.626Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/groups - List Groups"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:05.626Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:07.136Z",
+      "type": "info",
+      "message": "Testing: POST /api/ai - Requires API Key"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:07.149Z",
+      "type": "info",
+      "message": "  AI endpoint responds correctly (key configured: false)"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:07.149Z",
+      "type": "pass",
+      "message": "PASSED: POST /api/ai - Requires API Key"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:07.149Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:08.653Z",
+      "type": "info",
+      "message": "Testing: GET /api/stats - Dashboard Stats"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:08.949Z",
+      "type": "info",
+      "message": "  Stats endpoint works"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:08.949Z",
+      "type": "pass",
+      "message": "PASSED: GET /api/stats - Dashboard Stats"
+    },
+    {
+      "timestamp": "2026-01-21T12:35:08.949Z",
+      "type": "info",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-01-21T12:35:10.463Z",
+      "type": "info",
+      "message": "=================================================="
+    },
+    {
+      "timestamp": "2026-01-21T12:35:10.463Z",
+      "type": "info",
+      "message": "Tests Complete: 9 passed, 2 failed, 0 skipped"
+    }
+  ]
+}

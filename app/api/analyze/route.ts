@@ -177,8 +177,8 @@ export async function POST(request: Request) {
           classification
         })
 
-        // Small delay to avoid rate limiting
-        await new Promise(r => setTimeout(r, 100))
+        // Delay to avoid rate limiting
+        await new Promise(r => setTimeout(r, 200))
       } catch (err) {
         console.error(`Failed to fetch game ${placeId}:`, err)
       }

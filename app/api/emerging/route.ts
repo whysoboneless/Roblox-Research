@@ -48,40 +48,38 @@ async function searchGames(keyword: string) {
   }
 }
 
-// Keywords that often indicate emerging/trending games
+// Get current year for dynamic keyword generation
+const currentYear = new Date().getFullYear()
+
+// Keywords that often indicate emerging/trending games - dynamically updated
 const TRENDING_KEYWORDS = [
-  'simulator 2024',
-  'simulator 2025',
-  'tycoon 2024',
-  'tycoon 2025',
+  `simulator ${currentYear}`,
+  `simulator ${currentYear - 1}`,
+  `tycoon ${currentYear}`,
+  `tycoon ${currentYear - 1}`,
   'new anime',
   'new tower defense',
   'anime defenders',
+  'anime simulator',
   'pet sim',
   'clicker',
   'obby new',
-  'survival',
+  'survival game',
   'fighting simulator',
-  'racing',
-  'horror game',
+  'racing simulator',
+  'horror game new',
+  'tower defense new',
+  'idle simulator',
+  'merge game',
 ]
 
-// Database of recently released popular games (updated periodically)
-const RECENT_HITS: Record<string, { placeId: string; launchDate: string }[]> = {
-  'anime': [
-    { placeId: '17017769292', launchDate: '2024-01' }, // Anime Defenders
-    { placeId: '16132924982', launchDate: '2024-02' }, // Anime Last Stand
-  ],
-  'simulator': [
-    { placeId: '8737899170', launchDate: '2024-01' }, // Pet Simulator 99
-    { placeId: '16732694052', launchDate: '2024-03' }, // Fisch
-  ],
-  'horror': [
-    { placeId: '6516141723', launchDate: '2023-08' }, // Doors
-  ],
-  'tycoon': [
-    { placeId: '17277709498', launchDate: '2024-04' }, // Grow a Garden
-  ],
+// Seed games that are known to be active - these help bootstrap searches
+const SEED_GAMES: Record<string, string[]> = {
+  'anime': ['17017769292', '16132924982', '4996049426', '4587034896'],
+  'simulator': ['16732694052', '8737899170', '6284583030', '4490140733'],
+  'horror': ['6516141723', '6839171747', '5765928606'],
+  'tycoon': ['17277709498', '920587237', '3527629287'],
+  'tower defense': ['17017769292', '4996049426', '4587034896', '5591597781'],
 }
 
 function estimateRevenue(ccu: number, likeRatio: number): number {
@@ -123,12 +121,12 @@ export async function GET(request: Request) {
       await new Promise(r => setTimeout(r, 50))
     }
 
-    // 2. Add known recent hits for the category
-    if (category && RECENT_HITS[category.toLowerCase()]) {
-      RECENT_HITS[category.toLowerCase()].forEach(g => allPlaceIds.add(g.placeId))
+    // 2. Add seed games for the category to ensure we have results
+    if (category && SEED_GAMES[category.toLowerCase()]) {
+      SEED_GAMES[category.toLowerCase()].forEach(id => allPlaceIds.add(id))
     } else {
-      // Add all recent hits if no category specified
-      Object.values(RECENT_HITS).flat().forEach(g => allPlaceIds.add(g.placeId))
+      // Add seed games from all categories if no category specified
+      Object.values(SEED_GAMES).flat().forEach(id => allPlaceIds.add(id))
     }
 
     // 3. Fetch details for all collected games
