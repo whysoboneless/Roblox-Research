@@ -9,14 +9,11 @@ import {
   CATEGORIES,
   VERTICALS,
   THEMES,
-  TARGET_AUDIENCES
-} from '../lib/roblox-classification'
-
-import {
+  TARGET_AUDIENCES,
   calculateQualificationScore,
   findOverlappingPatterns,
   generateSubVertical
-} from '../lib/classification-system'
+} from '../lib/roblox-classification'
 
 console.log('\n========================================')
 console.log('CLASSIFICATION SYSTEM TESTS')

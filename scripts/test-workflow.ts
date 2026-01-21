@@ -186,7 +186,7 @@ async function runTests() {
 
   // Test 6: Classification helper functions
   await test('Classification helper functions', async () => {
-    const { calculateQualificationScore, findOverlappingPatterns } = await import('../lib/classification-system')
+    const { calculateQualificationScore, findOverlappingPatterns } = await import('../lib/roblox-classification')
 
     // Test qualification score
     const mockGames = [

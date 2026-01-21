@@ -216,29 +216,30 @@ export default function IdeaPage() {
     }
   }
 
-  // Load proven formulas from YOUR saved competitor groups (real research data)
+  // Load proven formulas from saved groups + pattern library fallback
   const loadHotFormulas = async () => {
     setLoadingFormulas(true)
     try {
-      const res = await fetch('/api/competitor-group')
-      const data = await res.json()
+      // First, try to load from saved competitor groups (your research)
+      const groupsRes = await fetch('/api/competitor-group')
+      const groupsData = await groupsRes.json()
 
-      if (data.groups && data.groups.length > 0) {
-        // Convert saved competitor groups to formulas (only show qualified groups)
-        const formulas: ProvenFormula[] = data.groups
-          .filter((group: any) => group.qualification_score >= 50) // Only qualified groups
+      const formulas: ProvenFormula[] = []
+
+      // Add formulas from your saved research
+      if (groupsData.groups && groupsData.groups.length > 0) {
+        const savedFormulas = groupsData.groups
+          .filter((group: any) => group.qualification_score >= 50)
           .map((group: any) => {
             const chars = group.structural_characteristics || {}
             const patterns = group.analysis_notes?.overlappingPatterns || {}
             const guide = group.analysis_notes?.replicationGuide || {}
 
-            // Get example games from the group
             const exampleGames = group.group_games
               ?.slice(0, 3)
               .map((gg: any) => gg.games?.name)
               .filter(Boolean) || []
 
-            // Extract real patterns from research
             const mustHaveRetention = patterns.mustHave?.retention || []
             const mustHaveMonetization = patterns.mustHave?.monetization || []
             const coreRequirements = guide.coreRequirements || guide.mustHave || []
@@ -260,10 +261,44 @@ export default function IdeaPage() {
               pitfalls: guide.pitfalls || []
             }
           })
-        setHotFormulas(formulas)
+        formulas.push(...savedFormulas)
       }
+
+      // If no saved research, load from proven patterns library
+      if (formulas.length === 0) {
+        try {
+          const patternsRes = await fetch('/api/patterns')
+          const patternsData = await patternsRes.json()
+
+          // Convert core_loop patterns to formulas
+          const coreLoopPatterns = patternsData.provenPatterns?.filter(
+            (p: any) => p.type === 'core_loop'
+          ) || []
+
+          const patternFormulas = coreLoopPatterns.map((p: any) => ({
+            template: p.data.template || 'Unknown',
+            theme: 'Various',
+            coreLoop: p.data.name || 'Core gameplay loop',
+            description: p.data.description || 'Proven game pattern',
+            avgRevenue: 50000, // Conservative estimate for proven patterns
+            emergingCount: 3,
+            mechanics: p.data.mechanics || [],
+            monetization: ['Gamepasses', '2x Multipliers', 'VIP'],
+            retention: ['Daily rewards', 'Prestige system'],
+            exampleGames: p.data.successExamples || [],
+            qualificationScore: Math.round((p.confidence || 0.8) * 100),
+            pitfalls: []
+          }))
+
+          formulas.push(...patternFormulas)
+        } catch (err) {
+          console.error('Failed to load patterns library:', err)
+        }
+      }
+
+      setHotFormulas(formulas)
     } catch (err) {
-      console.error('Failed to load saved research:', err)
+      console.error('Failed to load formulas:', err)
     } finally {
       setLoadingFormulas(false)
     }

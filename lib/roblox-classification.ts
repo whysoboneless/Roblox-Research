@@ -670,3 +670,81 @@ function incrementComplexity(level: string): string {
   const idx = order.indexOf(level)
   return order[Math.min(idx + 1, order.length - 1)]
 }
+
+// ============================================
+// QUALIFICATION & PATTERN ANALYSIS FUNCTIONS
+// (Merged from classification-system.ts)
+// ============================================
+
+/**
+ * Calculate group qualification score
+ */
+export function calculateQualificationScore(games: any[]): {
+  score: number
+  isQualified: boolean
+  checks: Record<string, boolean>
+} {
+  const checks = {
+    hasRevenueProof: games.some(g => g.metrics?.estimatedRevenue >= 10000),
+    hasRecentSuccess: games.some(g => {
+      const created = new Date(g.dates?.created)
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+      return created > sixMonthsAgo && g.metrics?.estimatedRevenue >= 5000
+    }),
+    hasMultipleSuccesses: games.filter(g => g.metrics?.estimatedRevenue >= 10000).length >= 2,
+    hasHighEngagement: games.some(g => parseFloat(g.metrics?.likeRatio || '0') >= 90)
+  }
+
+  let score = 0
+  if (checks.hasRevenueProof) score += 30
+  if (checks.hasRecentSuccess) score += 30
+  if (checks.hasMultipleSuccesses) score += 25
+  if (checks.hasHighEngagement) score += 15
+
+  return {
+    score,
+    isQualified: score >= 60,
+    checks
+  }
+}
+
+/**
+ * Find overlapping patterns between games
+ */
+export function findOverlappingPatterns(classifications: any[]): {
+  coreLoops: Array<{ pattern: string, count: number, percentage: number }>
+  monetization: Array<{ pattern: string, count: number, percentage: number }>
+  retention: Array<{ pattern: string, count: number, percentage: number }>
+  viral: Array<{ pattern: string, count: number, percentage: number }>
+} {
+  const total = classifications.length
+
+  const countPatterns = (items: string[]): Array<{ pattern: string, count: number, percentage: number }> => {
+    const counts: Record<string, number> = {}
+    for (const item of items) {
+      if (item) counts[item] = (counts[item] || 0) + 1
+    }
+    return Object.entries(counts)
+      .map(([pattern, count]) => ({
+        pattern,
+        count,
+        percentage: Math.round((count / total) * 100)
+      }))
+      .sort((a, b) => b.count - a.count)
+  }
+
+  return {
+    coreLoops: countPatterns(classifications.map(c => c.coreLoop?.name).filter(Boolean)),
+    monetization: countPatterns(classifications.flatMap(c => c.monetizationHooks || [])),
+    retention: countPatterns(classifications.flatMap(c => c.retentionHooks || [])),
+    viral: countPatterns(classifications.flatMap(c => c.viralHooks || []))
+  }
+}
+
+/**
+ * Generate sub-vertical from vertical + theme
+ */
+export function generateSubVertical(vertical: string, theme: string): string {
+  return `${theme} ${vertical}`
+}

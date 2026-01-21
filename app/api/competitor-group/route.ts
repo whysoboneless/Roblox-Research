@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase } from '@/lib/supabase'
-import { calculateQualificationScore, findOverlappingPatterns } from '@/lib/classification-system'
+import { calculateQualificationScore, findOverlappingPatterns } from '@/lib/roblox-classification'
 
 const anthropic = new Anthropic()
 
