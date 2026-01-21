@@ -70,28 +70,21 @@ export default function DiscoverPage() {
     setLoading(true)
     setDiscoveryMode('trending')
     try {
-      const res = await fetch('/api/external-stats?mode=trending')
+      // Directly use the discover API with popular games
+      const res = await fetch('/api/discover?query=popular&limit=15')
       const data = await res.json()
 
-      // Enrich with full game data
-      const enrichedGames = []
-      for (const game of data.games || []) {
-        try {
-          const discoverRes = await fetch(`/api/discover?query=${game.placeId}&limit=1`)
-          const discoverData = await discoverRes.json()
-          if (discoverData.games?.[0]) {
-            enrichedGames.push(discoverData.games[0])
-          }
-        } catch {
-          // Skip failed enrichments
-        }
+      if (data.games && data.games.length > 0) {
+        setGames(data.games)
+      } else {
+        // Fallback: try category search
+        const fallbackRes = await fetch('/api/discover?query=simulator&limit=15')
+        const fallbackData = await fallbackRes.json()
+        setGames(fallbackData.games || [])
       }
-
-      setGames(enrichedGames.length > 0 ? enrichedGames : data.games || [])
     } catch (err) {
       console.error('Fetch trending failed:', err)
-      // Fallback to regular discover
-      fetchGames(undefined, 'popular')
+      setGames([])
     } finally {
       setLoading(false)
     }
@@ -403,23 +396,23 @@ export default function DiscoverPage() {
                     <div>
                       <span className="text-gray-500">CCU</span>
                       <p className="text-green-400 font-mono font-bold">
-                        {game.metrics.currentPlayers.toLocaleString()}
+                        {(game.metrics?.currentPlayers || 0).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-500">Visits</span>
                       <p className="font-mono">
-                        {(game.metrics.visits / 1e9).toFixed(1)}B
+                        {((game.metrics?.visits || 0) / 1e9).toFixed(1)}B
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-500">Like %</span>
-                      <p>{game.metrics.likeRatio}%</p>
+                      <p>{game.metrics?.likeRatio || '0'}%</p>
                     </div>
                     <div>
                       <span className="text-gray-500">Est. Rev</span>
                       <p className="text-yellow-400 font-mono">
-                        ${(game.metrics.estimatedRevenue / 1000).toFixed(0)}k
+                        ${((game.metrics?.estimatedRevenue || 0) / 1000).toFixed(0)}k
                       </p>
                     </div>
                   </div>
