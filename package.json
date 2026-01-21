@@ -17,7 +17,11 @@
     "sync": "node src/cli/sync.js",
     "track": "node src/cli/track.js",
     "db:test": "node src/db/test-connection.js",
-    "cli:dev": "node --watch src/index.js"
+    "cli:dev": "node --watch src/index.js",
+    "test": "npx tsx scripts/test-classification.ts",
+    "test:apis": "npx tsx scripts/test-apis.ts",
+    "test:workflow": "npx tsx scripts/test-workflow.ts",
+    "test:all": "npm run test && npm run test:apis"
   },
   "keywords": [
     "roblox",

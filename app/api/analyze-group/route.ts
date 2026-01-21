@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase } from '@/lib/supabase'
 
-const anthropic = new Anthropic()
+// Only create Anthropic client if API key is available
+const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null
 
 // Unified Group Analysis API
 // Takes array of Place IDs → AI classifies each → Finds overlaps → Generates replication guide
@@ -110,8 +111,112 @@ async function fetchGameData(placeId: string): Promise<GameData | null> {
   }
 }
 
-// AI classify a single game
+// Fallback classifier using pattern matching (when AI is not available)
+function classifyGameFallback(game: GameData): GameClassification {
+  const nameLower = game.name.toLowerCase()
+  const descLower = game.description.toLowerCase()
+  const combined = `${nameLower} ${descLower}`
+
+  // Detect vertical
+  let vertical = 'Simulator'
+  let category = 'Simulation'
+  if (combined.includes('tower defense') || combined.includes('td')) {
+    vertical = 'Tower Defense'; category = 'Strategy'
+  } else if (combined.includes('tycoon')) {
+    vertical = 'Tycoon'; category = 'Simulation'
+  } else if (combined.includes('obby') || combined.includes('parkour')) {
+    vertical = 'Obby'; category = 'Adventure'
+  } else if (combined.includes('horror') || combined.includes('scary')) {
+    vertical = 'Horror'; category = 'Adventure'
+  } else if (combined.includes('rpg') || combined.includes('sword') || combined.includes('fight')) {
+    vertical = 'Action RPG'; category = 'Action'
+  } else if (combined.includes('pet') || combined.includes('hatch')) {
+    vertical = 'Pet Collection'; category = 'Simulation'
+  } else if (combined.includes('roleplay') || combined.includes('rp')) {
+    vertical = 'Roleplay'; category = 'Social'
+  }
+
+  // Detect theme
+  let theme = 'Fantasy'
+  if (combined.includes('anime')) theme = 'Anime'
+  else if (combined.includes('brainrot') || combined.includes('skibidi') || combined.includes('meme')) theme = 'Meme-Brainrot'
+  else if (combined.includes('horror') || combined.includes('scary')) theme = 'Horror'
+  else if (combined.includes('cute') || combined.includes('kawaii')) theme = 'Cute'
+  else if (combined.includes('space') || combined.includes('sci-fi')) theme = 'Sci-Fi'
+
+  // Detect patterns from gamepasses
+  const monetization: string[] = []
+  const gamepassNames = game.gamepasses?.map((gp: any) => gp.name.toLowerCase()).join(' ') || ''
+  if (gamepassNames.includes('2x') || gamepassNames.includes('double')) monetization.push('2x multiplier pass')
+  if (gamepassNames.includes('auto')) monetization.push('Auto-collect')
+  if (gamepassNames.includes('vip')) monetization.push('VIP bundle')
+  if (gamepassNames.includes('skip')) monetization.push('Skip content')
+  if (monetization.length === 0) monetization.push('Standard gamepasses')
+
+  // Default patterns based on vertical
+  const retentionMap: Record<string, string[]> = {
+    'Simulator': ['Prestige system', 'Daily rewards', 'Leaderboards'],
+    'Tower Defense': ['Unit collection', 'Challenge modes', 'Clans'],
+    'Tycoon': ['Automation unlocks', 'Expansion areas', 'Prestige'],
+    'Pet Collection': ['Egg hatching', 'Evolution', 'Trading'],
+    'Horror': ['Story completion', 'Multiple endings', 'Collectibles'],
+    'Obby': ['Checkpoints', 'Speed runs', 'Unlockable trails'],
+    'Action RPG': ['Level progression', 'Gear collection', 'PvP ranks'],
+    'Roleplay': ['Housing', 'Jobs', 'Social connections']
+  }
+
+  const viralMap: Record<string, string[]> = {
+    'Simulator': ['Big number flexing', 'Leaderboard competition', 'Promo codes'],
+    'Tower Defense': ['Trading communities', 'Tier list discussions', 'Update hype'],
+    'Tycoon': ['Base showcasing', 'Speedruns', 'Collaboration'],
+    'Pet Collection': ['Trading economy', 'Rare pet flexing', 'Giveaways'],
+    'Horror': ['Jump scare reactions', 'Lore theories', 'Speedrun community'],
+    'Obby': ['Speedrun records', 'Rage compilations', 'Challenge videos'],
+    'Action RPG': ['Build showcasing', 'PvP clips', 'Boss guides'],
+    'Roleplay': ['Roleplay content', 'Building showcases', 'Drama content']
+  }
+
+  // Determine complexity based on vertical
+  const complexityMap: Record<string, string> = {
+    'Simulator': 'Low-Medium',
+    'Obby': 'Low',
+    'Tycoon': 'Low-Medium',
+    'Tower Defense': 'Medium',
+    'Horror': 'Medium',
+    'Pet Collection': 'Medium',
+    'Action RPG': 'Medium-High',
+    'Roleplay': 'Medium-High'
+  }
+
+  return {
+    category,
+    vertical,
+    subVertical: `${theme} ${vertical}`,
+    theme,
+    complexity: complexityMap[vertical] || 'Medium',
+    targetAge: '8-12',
+    coreMechanic: vertical === 'Simulator' ? 'Collect → Upgrade → Prestige' :
+                  vertical === 'Tower Defense' ? 'Place → Defend → Upgrade' :
+                  vertical === 'Tycoon' ? 'Build → Earn → Expand' :
+                  vertical === 'Pet Collection' ? 'Hatch → Evolve → Trade' :
+                  'Play → Progress → Unlock',
+    loopSteps: ['Start', 'Progress', 'Unlock', 'Repeat'],
+    engagementHook: 'Progression satisfaction',
+    retention: retentionMap[vertical] || ['Daily rewards', 'Collection'],
+    monetization,
+    viral: viralMap[vertical] || ['Social sharing', 'Promo codes'],
+    similarTo: [`Popular ${vertical} games`]
+  }
+}
+
+// AI classify a single game (with fallback)
 async function classifyGame(game: GameData): Promise<GameClassification | null> {
+  // If no AI available, use fallback classifier
+  if (!anthropic) {
+    console.log(`Using fallback classifier for ${game.name} (no API key)`)
+    return classifyGameFallback(game)
+  }
+
   try {
     const gamepassInfo = game.gamepasses?.length
       ? game.gamepasses.map((gp: any) => `${gp.name} (${gp.price}R$)`).join(', ')
@@ -160,10 +265,11 @@ Return JSON only (no markdown):
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0])
     }
-    return null
+    // Fall back if AI returns empty
+    return classifyGameFallback(game)
   } catch (err) {
-    console.error(`Failed to classify ${game.name}:`, err)
-    return null
+    console.error(`AI classification failed for ${game.name}, using fallback:`, err)
+    return classifyGameFallback(game)
   }
 }
 
@@ -261,12 +367,79 @@ function calculateQualification(games: GameData[], classifications: GameClassifi
   }
 }
 
+// Fallback replication guide generator
+function generateReplicationGuideFallback(
+  characteristics: any,
+  overlaps: any
+): any {
+  const vertical = characteristics.vertical || 'Simulator'
+  const complexity = characteristics.complexity || 'Medium'
+
+  // Complexity to dev time mapping
+  const devTimeMap: Record<string, string> = {
+    'Low': '1-3 weeks',
+    'Low-Medium': '4-6 weeks',
+    'Medium': '6-10 weeks',
+    'Medium-High': '10-16 weeks',
+    'High': '16+ weeks'
+  }
+
+  const teamSizeMap: Record<string, string> = {
+    'Low': 'Solo',
+    'Low-Medium': '1-2 developers',
+    'Medium': '2-3 developers',
+    'Medium-High': '3-5 developers',
+    'High': '5+ developers'
+  }
+
+  // Vertical-specific pitfalls
+  const pitfallsMap: Record<string, string[]> = {
+    'Simulator': ['Progression wall too early', 'Prestige feels unrewarding', 'No visual variety', 'P2W perception'],
+    'Tower Defense': ['Gacha too predatory', 'Power creep in units', 'Lack of content updates', 'Unbalanced meta'],
+    'Tycoon': ['Performance issues at scale', 'Boring idle phase', 'No meaningful choices', 'Lack of social features'],
+    'Pet Collection': ['Pet values crash too fast', 'Duping exploits', 'Market saturation', 'Boring progression'],
+    'Horror': ['Scares become predictable', 'Low replay value', 'Too difficult/easy balance', 'Performance with effects'],
+    'Obby': ['Difficulty spikes', 'Unfair checkpoints', 'Lack of variety', 'No social incentive'],
+    'Action RPG': ['Combat feels clunky', 'Unbalanced PvP', 'Gear grind too long', 'Lack of endgame']
+  }
+
+  // Combine must-haves
+  const mustHave = [
+    characteristics.coreMechanic || 'Core gameplay loop',
+    ...overlaps.mustHave.retention.slice(0, 2),
+    ...overlaps.mustHave.monetization.slice(0, 2)
+  ].filter(Boolean)
+
+  // Combine should-haves
+  const shouldHave = [
+    ...overlaps.shouldHave.retention.slice(0, 2),
+    ...overlaps.shouldHave.monetization.slice(0, 2),
+    ...overlaps.mustHave.viral.slice(0, 2)
+  ].filter(Boolean)
+
+  return {
+    mustHave: mustHave.length > 0 ? mustHave : ['Core loop implementation', 'Basic progression system', 'Monetization gamepasses'],
+    shouldHave: shouldHave.length > 0 ? shouldHave : ['Daily rewards', 'Leaderboards', 'Social features'],
+    differentiation: ['Unique theme twist', 'Better UX/polish', 'Novel mechanics', 'Stronger social features'],
+    coreRequirements: ['Satisfying core loop', 'Clear progression', 'Performance optimization', 'Mobile-friendly UI'],
+    pitfalls: pitfallsMap[vertical] || ['Lack of content', 'Poor balancing', 'No retention hooks', 'Weak monetization'],
+    devTime: devTimeMap[complexity] || '6-10 weeks',
+    teamSize: teamSizeMap[complexity] || '2-3 developers'
+  }
+}
+
 // Generate replication guide
 async function generateReplicationGuide(
   characteristics: any,
   overlaps: any,
   qualification: any
 ) {
+  // If no AI available, use fallback
+  if (!anthropic) {
+    console.log('Using fallback replication guide generator (no API key)')
+    return generateReplicationGuideFallback(characteristics, overlaps)
+  }
+
   try {
     const prompt = `Based on this competitor group analysis, generate a replication guide.
 
@@ -309,10 +482,11 @@ Return JSON only:
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0])
     }
-    return null
+    // Fall back if AI returns empty
+    return generateReplicationGuideFallback(characteristics, overlaps)
   } catch (err) {
-    console.error('Failed to generate replication guide:', err)
-    return null
+    console.error('AI replication guide failed, using fallback:', err)
+    return generateReplicationGuideFallback(characteristics, overlaps)
   }
 }
 
