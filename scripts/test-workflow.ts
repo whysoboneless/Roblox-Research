@@ -79,7 +79,24 @@ async function runTests() {
     return data
   }, true) // Allow as warning
 
-  // Test 2: Deep Analyze a single game (allow warning - external API)
+  // Test 2: Find Similar Games API
+  await test('Find similar games', async () => {
+    // Test with an emerging game - should auto-find competitors
+    const data = await fetchAPI('/api/find-similar?placeId=131623223084840&limit=4')
+    if (!data.sourceGame || !data.sourceGame.name) {
+      throw new Error('Expected source game data')
+    }
+    if (!data.detectedVertical) {
+      throw new Error('Expected detected vertical')
+    }
+    console.log(`  → Source: ${data.sourceGame.name}`)
+    console.log(`  → Vertical: ${data.detectedVertical}, Theme: ${data.detectedTheme}`)
+    console.log(`  → Found ${data.totalFound} games, ${data.qualifiedCount} qualified as competitors`)
+    console.log(`  → Similar games: ${data.similarGames.map((g: any) => g.name).join(', ').slice(0, 60)}...`)
+    return data
+  }, true) // Allow as warning if game not found
+
+  // Test 3: Deep Analyze a single game (allow warning - external API)
   await test('Deep analyze single game', async () => {
     const data = await fetchAPI(`/api/deep-analyze?placeId=${TEST_PLACE_IDS[0]}`)
     if (!data.basic || !data.basic.name) {

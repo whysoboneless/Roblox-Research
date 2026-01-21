@@ -18,14 +18,21 @@ interface GameData {
   }
 }
 
-// Detect game vertical from name/description
+// Detect game vertical from name/description - more specific for better matching
 function detectVertical(name: string, description: string): string {
   const combined = `${name} ${description}`.toLowerCase()
 
+  // Specific mechanics first (most important for competitor grouping)
+  if (combined.includes('escape') || combined.includes('survive') || combined.includes('run from') || combined.includes('avoid')) return 'escape-survival'
+  if (combined.includes('mine') || combined.includes('mining') || combined.includes('dig')) return 'mining-simulator'
+  if (combined.includes('collect') || combined.includes('collector')) return 'collector'
+  if (combined.includes('clicker') || combined.includes('click')) return 'clicker'
+  if (combined.includes('merge') || combined.includes('combining')) return 'merge'
+  if (combined.includes('lucky block') || combined.includes('mystery box') || combined.includes('break')) return 'lucky-block'
   if (combined.includes('tower defense') || combined.includes(' td ') || combined.includes('defenders')) return 'tower-defense'
   if (combined.includes('simulator') || combined.includes('sim')) return 'simulator'
   if (combined.includes('tycoon')) return 'tycoon'
-  if (combined.includes('obby') || combined.includes('parkour')) return 'obby'
+  if (combined.includes('obby') || combined.includes('parkour') || combined.includes('obstacle')) return 'obby'
   if (combined.includes('horror') || combined.includes('scary') || combined.includes('backroom')) return 'horror'
   if (combined.includes('rpg') || combined.includes('sword') || combined.includes('dungeon')) return 'rpg'
   if (combined.includes('pet') || combined.includes('hatch') || combined.includes('egg')) return 'pet'
@@ -78,7 +85,13 @@ function buildSearchKeywords(vertical: string, theme: string, name: string): str
     'roleplay': ['roleplay', 'brookhaven'],
     'fighting': ['fighting', 'pvp', 'battle'],
     'racing': ['racing', 'car', 'driving'],
-    'other': ['escape', 'run', 'survive']
+    'escape-survival': ['escape', 'survive', 'tsunami', 'disaster', 'run from'],
+    'mining-simulator': ['mining simulator', 'mine', 'dig'],
+    'clicker': ['clicker', 'clicking simulator'],
+    'collector': ['collect', 'collector'],
+    'merge': ['merge', 'merge game'],
+    'lucky-block': ['lucky block', 'mystery box'],
+    'other': ['simulator', 'game 2025']
   }
 
   // Theme-based keywords
@@ -257,26 +270,59 @@ export async function GET(request: Request) {
     }
 
     // Step 6: Score and rank similar games
+    // CRITICAL: Games must have similar MECHANICS to be true competitors
+    // Theme is secondary - you can have a brainrot TD and a brainrot simulator, those are NOT competitors
     const scoredGames = allGames.map(game => {
       const gameVertical = detectVertical(game.name, game.description)
       const gameTheme = detectTheme(game.name, game.description)
 
       let score = 0
 
-      // Same vertical = big bonus
-      if (gameVertical === vertical) score += 50
+      // SAME VERTICAL/MECHANIC = MUST HAVE (70 points)
+      // This is the core requirement for being a competitor
+      if (gameVertical === vertical) {
+        score += 70
+      } else {
+        // Different vertical = likely NOT a real competitor
+        // Still give some points if at least related
+        const relatedVerticals: Record<string, string[]> = {
+          'simulator': ['clicker', 'collector', 'mining-simulator', 'tycoon'],
+          'mining-simulator': ['simulator', 'collector', 'clicker'],
+          'escape-survival': ['obby', 'horror', 'other'], // escape games often mis-detected
+          'lucky-block': ['simulator', 'mining-simulator', 'collector', 'clicker'],
+          'clicker': ['simulator', 'collector', 'mining-simulator'],
+          'collector': ['simulator', 'pet', 'clicker'],
+          'obby': ['escape-survival', 'parkour'],
+          'horror': ['escape-survival', 'other'],
+          'tycoon': ['simulator', 'clicker'],
+          'tower-defense': ['rpg', 'fighting'],
+          'pet': ['collector', 'simulator'],
+          'other': ['escape-survival', 'obby', 'horror'] // 'other' often means undetected escape games
+        }
+        if (relatedVerticals[vertical]?.includes(gameVertical)) {
+          score += 30 // Related but not same
+        }
+        // Otherwise gets 0 for vertical - they're different game types
+      }
 
-      // Same theme = bonus
-      if (gameTheme === theme) score += 30
+      // Same theme = small bonus (15 points)
+      // Nice to have but NOT required for competitor grouping
+      if (gameTheme === theme) score += 15
 
-      // CCU bonus (normalized)
-      score += Math.min(20, game.metrics.currentPlayers / 500)
+      // CCU bonus (normalized, max 15 points)
+      // More popular = more relevant as competitor
+      score += Math.min(15, game.metrics.currentPlayers / 1000)
 
-      return { ...game, similarityScore: score }
+      return { ...game, similarityScore: score, detectedVertical: gameVertical, detectedTheme: gameTheme }
     })
 
+    // Filter out games with very low scores (not real competitors)
+    // Threshold: 45 allows related verticals (30) + matching theme (15)
+    // This catches games that are close enough to be worth analyzing
+    const qualifiedGames = scoredGames.filter(g => g.similarityScore >= 45)
+
     // Sort by similarity score, then by CCU
-    scoredGames.sort((a, b) => {
+    qualifiedGames.sort((a, b) => {
       if (b.similarityScore !== a.similarityScore) {
         return b.similarityScore - a.similarityScore
       }
@@ -284,7 +330,7 @@ export async function GET(request: Request) {
     })
 
     // Take top N similar games
-    const similarGames = scoredGames.slice(0, limit)
+    const similarGames = qualifiedGames.slice(0, limit)
 
     return NextResponse.json({
       sourceGame,
@@ -293,6 +339,7 @@ export async function GET(request: Request) {
       searchKeywords: keywords,
       similarGames,
       totalFound: scoredGames.length,
+      qualifiedCount: qualifiedGames.length,
       // Include all place IDs for easy analysis
       allPlaceIds: [placeId, ...similarGames.map(g => g.placeId)]
     })

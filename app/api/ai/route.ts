@@ -51,6 +51,18 @@ Be encouraging but specific. Help them see their idea more clearly.`
 
       case 'qualify-idea':
         // Full idea qualification and game plan generation
+        // Build market research context if available
+        const marketContext = data.marketResearch ? `
+REAL MARKET DATA (from emerging games research):
+- Competitors Found: ${data.marketResearch.competitorCount} emerging games in this space
+- Example Competitors: ${data.marketResearch.competitorNames?.join(', ') || 'None found'}
+- What's Working: ${data.marketResearch.whatsWorking?.join('; ') || 'Unknown'}
+- Market Gaps (20% better opportunities): ${data.marketResearch.gaps?.join('; ') || 'Unknown'}
+- Proven Retention Patterns: ${data.marketResearch.suggestedPatterns?.retention?.join(', ') || 'Standard patterns'}
+- Proven Monetization: ${data.marketResearch.suggestedPatterns?.monetization?.join(', ') || 'Standard patterns'}
+- Viral Mechanics: ${data.marketResearch.suggestedPatterns?.viral?.join(', ') || 'Standard patterns'}
+` : ''
+
         prompt = `Analyze this Roblox game idea and create a complete game plan:
 
 IDEA:
@@ -60,23 +72,27 @@ IDEA:
 - Core Loop: ${data.coreLoop}
 - Unique Hook: ${data.uniqueHook || 'Not specified'}
 - Monetization: ${data.monetization?.join(', ') || 'Not specified'}
+${data.baseFormula ? `- Based on Formula: ${data.baseFormula}` : ''}
+${marketContext}
+
+IMPORTANT: Use the real market data above to make your analysis data-driven. Reference the actual competitors found. Recommend patterns that are PROVEN to work in this space. Focus on how they can be 20% better than existing games.
 
 Provide a comprehensive analysis in this EXACT JSON format:
 {
   "score": <number 0-100>,
   "verdict": "<PROMISING or NEEDS_WORK or HIGH_RISK>",
-  "summary": "<2 sentence summary of viability>",
+  "summary": "<2 sentence summary based on real market data>",
   "coreMechanics": ["<mechanic 1>", "<mechanic 2>", ...],
-  "monetizationPlan": ["<strategy 1>", "<strategy 2>", ...],
-  "retentionHooks": ["<hook 1>", "<hook 2>", ...],
-  "viralStrategy": ["<tactic 1>", "<tactic 2>", ...],
+  "monetizationPlan": ["<strategy from proven patterns>", "<strategy 2>", ...],
+  "retentionHooks": ["<proven hook 1>", "<proven hook 2>", ...],
+  "viralStrategy": ["<tactic based on what works>", "<tactic 2>", ...],
   "weekByWeekPlan": ["Week 1-2: <task>", "Week 3-4: <task>", ...],
   "risks": ["<risk 1>", "<risk 2>", ...],
-  "competitors": ["<game 1>", "<game 2>", ...],
-  "uniqueAdvice": "<One specific piece of advice for THIS idea>"
+  "competitors": ["<real competitor from data>", "<game 2>", ...],
+  "uniqueAdvice": "<Specific advice on how to be 20% better than the competitors found>"
 }
 
-Be specific to their actual idea, not generic templates. Reference real Roblox games.
+Be specific to their actual idea and the real market data. Don't give generic advice - reference the actual competitors and proven patterns.
 Return ONLY valid JSON, no other text.`
         break
 

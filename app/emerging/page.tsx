@@ -203,10 +203,9 @@ export default function EmergingStarsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Market Scanner</div>
-        <h1 className="text-3xl font-bold">Emerging Opportunities</h1>
+        <h1 className="text-3xl font-bold">Discover Trends</h1>
         <p className="text-gray-400 mt-1">
-          Crawl the market for new games gaining traction - find validated niches before they saturate
+          New games gaining traction right now. Click &quot;Analyze&quot; to research any game.
         </p>
       </div>
 

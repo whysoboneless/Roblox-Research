@@ -60,15 +60,14 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Saved Research</div>
-          <h1 className="text-3xl font-bold">Competitor Groups</h1>
-          <p className="text-gray-400 mt-1">Manage and track your competitor research</p>
+          <h1 className="text-3xl font-bold">Your Research</h1>
+          <p className="text-gray-400 mt-1">Saved competitor groups from your analysis</p>
         </div>
         <Link
-          href="/analyze"
+          href="/emerging"
           className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-medium transition-colors"
         >
-          + New Analysis
+          + Find More Games
         </Link>
       </div>
 
@@ -94,16 +93,21 @@ export default function GroupsPage() {
         <div className="text-center py-12 text-gray-400">Loading groups...</div>
       ) : filteredGroups.length === 0 ? (
         <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-12 text-center">
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-400 mb-2">
             {groups.length === 0
-              ? 'No competitor groups yet. Start by analyzing some games!'
+              ? 'No research saved yet.'
               : 'No groups match the current filter.'}
           </p>
+          {groups.length === 0 && (
+            <p className="text-gray-500 text-sm mb-4">
+              Discover trending games and click &quot;Analyze&quot; to start building your research library.
+            </p>
+          )}
           <Link
-            href="/analyze"
+            href="/emerging"
             className="inline-block px-6 py-3 bg-green-600 hover:bg-green-500 rounded-lg font-medium transition-colors"
           >
-            Analyze Games
+            Discover Trending Games
           </Link>
         </div>
       ) : (

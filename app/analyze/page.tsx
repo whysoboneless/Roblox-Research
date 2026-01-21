@@ -213,9 +213,8 @@ function AnalyzeContent() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Competitor Intelligence</div>
-        <h1 className="text-3xl font-bold">Analyze Competitor Group</h1>
-        <p className="text-gray-400 mt-1">Enter Roblox Place IDs to extract the winning formula from successful games</p>
+        <h1 className="text-3xl font-bold">Analyze Games</h1>
+        <p className="text-gray-400 mt-1">Extract the winning formula from similar games - patterns, monetization, and what makes them work.</p>
       </div>
 
       {/* Input Section */}
