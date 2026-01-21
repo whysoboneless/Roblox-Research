@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface GeneratedIdea {
@@ -13,211 +13,456 @@ interface GeneratedIdea {
   whyItWorks: string
   risks: string[]
   firstSteps: string[]
+  complexity?: string
+  sourceData?: {
+    gamesAnalyzed: number
+    avgRevenue: number
+    qualificationScore: number
+  }
+}
+
+interface SavedGroup {
+  id: string
+  group_name: string
+  structural_characteristics: {
+    category?: string
+    vertical?: string
+    subVertical?: string
+    theme?: string
+    dominantCoreLoop?: string
+  }
+  qualification_score: number
+  analysis_notes?: {
+    patterns?: any
+    replicationGuide?: any
+    metrics?: any
+  }
+}
+
+interface EmergingGame {
+  placeId: string
+  name: string
+  metrics: {
+    currentPlayers: number
+    estimatedRevenue: number
+    likeRatio: string
+  }
+  daysOld: number
+  classification?: {
+    vertical?: string
+    theme?: string
+    coreLoop?: string
+  }
 }
 
 const IDEA_STARTERS = [
-  { id: 'trending', label: 'What\'s trending right now?' },
-  { id: 'underserved', label: 'Find underserved niches' },
-  { id: 'mashup', label: 'Combine two popular genres' },
-  { id: 'improve', label: 'Improve an existing game type' },
-  { id: 'theme', label: 'Suggest a theme for my template' },
-  { id: 'random', label: 'Generate random idea' },
+  { id: 'trending', label: 'What\'s trending right now?', description: 'Based on real emerging games' },
+  { id: 'saved', label: 'From my research', description: 'Use saved competitor groups' },
+  { id: 'underserved', label: 'Find underserved niches', description: 'Low competition opportunities' },
+  { id: 'mashup', label: 'Combine two formulas', description: 'Mix proven mechanics' },
+  { id: 'improve', label: 'Improve an existing type', description: 'Better execution' },
+  { id: 'random', label: 'Generate random idea', description: 'Surprise me' },
 ]
 
-const TRENDING_PATTERNS = [
+// Fallback static ideas for when API fails
+const FALLBACK_TRENDING = [
   {
-    name: 'Anime Defenders Clone',
+    name: 'Brainrot Simulator',
+    template: 'Simulator',
+    theme: 'Meme/Brainrot',
+    coreLoop: 'Click to collect brainrot items, upgrade collection speed, prestige for multipliers, unlock new brainrot characters',
+    uniqueHook: 'Trending meme characters with constant updates',
+    monetization: ['2x earnings pass', 'Auto-collect', 'VIP bundle', 'Premium brainrot packs'],
+    whyItWorks: 'Low complexity, meme themes drive viral growth, proven simulator formula',
+    risks: ['Meme trends fade quickly', 'IP concerns with characters', 'Balancing prestige'],
+    firstSteps: ['Core click + currency system', 'First 10 brainrot items', 'Basic prestige'],
+    complexity: 'Low-Medium'
+  },
+  {
+    name: 'Anime Tower Defense',
     template: 'Tower Defense',
     theme: 'Anime',
-    coreLoop: 'Summon anime characters via gacha, place them as towers, upgrade with duplicates, defend waves, earn currency for more summons',
-    uniqueHook: 'Add unique co-op raid bosses or PvP tower battles',
-    monetization: ['Gacha summons', 'Battle pass', 'Premium currency'],
-    whyItWorks: 'Anime TD is proven with multiple $100k+/month games. Collection mechanics drive long-term engagement.',
+    coreLoop: 'Summon anime units via gacha, place to defend waves, upgrade with duplicates, progress through stages',
+    uniqueHook: 'Popular anime characters with trading economy',
+    monetization: ['Gacha summons', 'Battle pass', 'Premium currency', 'Trading passes'],
+    whyItWorks: 'Multiple proven $100k+/month games. Collection + trading drives retention.',
     risks: ['Saturated market', 'High content expectations', 'Balancing gacha rates'],
-    firstSteps: ['Design 20-30 starter units', 'Build wave system prototype', 'Create gacha UI']
-  },
-  {
-    name: 'Survival Crafting Game',
-    template: 'Survival',
-    theme: 'Post-Apocalyptic',
-    coreLoop: 'Gather resources, craft tools/weapons, build base, survive against environment and enemies, progress through technology tiers',
-    uniqueHook: 'Procedurally generated world with seasons affecting gameplay',
-    monetization: ['Cosmetic skins', 'Base decorations', 'Premium tools'],
-    whyItWorks: 'Survival games have dedicated audiences. Base building provides social sharing opportunities.',
-    risks: ['Complex development', 'Performance optimization', 'Griefing in multiplayer'],
-    firstSteps: ['Core resource gathering loop', 'Basic crafting system', 'Simple building mechanics']
-  },
-  {
-    name: 'Clicker Tycoon Hybrid',
-    template: 'Simulator',
-    theme: 'Business',
-    coreLoop: 'Click to earn currency, buy automated earners, prestige for multipliers, unlock new areas and upgrades',
-    uniqueHook: 'Real business simulation with market dynamics',
-    monetization: ['2x earnings pass', 'Auto-clicker', 'Skip timers', 'Premium areas'],
-    whyItWorks: 'Low barrier to entry, satisfying progression, works well with minimal art',
-    risks: ['Can feel too simple', 'Balancing progression curve', 'Player fatigue'],
-    firstSteps: ['Core click + currency system', 'First 5 purchasable upgrades', 'Basic prestige system']
-  }
-]
-
-const UNDERSERVED_NICHES = [
-  {
-    name: 'Cooking Competition Game',
-    template: 'Simulation',
-    theme: 'Food/Cooking',
-    coreLoop: 'Compete in timed cooking challenges, unlock recipes, customize restaurant, climb leaderboards',
-    uniqueHook: 'Real-time multiplayer cooking competitions like MasterChef',
-    monetization: ['Recipe packs', 'Kitchen cosmetics', 'Chef outfits'],
-    whyItWorks: 'Cooking games are popular on mobile but underrepresented on Roblox',
-    risks: ['Niche audience', 'Complex cooking mechanics', 'Recipe variety needed'],
-    firstSteps: ['Core cooking minigame', 'Recipe unlock system', 'Kitchen customization']
-  },
-  {
-    name: 'Music/Rhythm Game',
-    template: 'Rhythm',
-    theme: 'Music',
-    coreLoop: 'Hit notes to the beat, unlock songs, customize character, compete for high scores',
-    uniqueHook: 'User-generated beatmaps with social sharing',
-    monetization: ['Song packs', 'Character skins', 'Instruments'],
-    whyItWorks: 'Rhythm games have passionate communities. Few quality options on Roblox.',
-    risks: ['Music licensing', 'Timing precision on Roblox', 'Content creation tools'],
-    firstSteps: ['Note highway system', 'Scoring mechanics', 'Song import system']
-  },
-  {
-    name: 'Card Battler',
-    template: 'Strategy',
-    theme: 'Fantasy',
-    coreLoop: 'Build decks, battle AI or players, earn cards from victories, climb ranked ladder',
-    uniqueHook: 'Simplified mechanics for younger audience with deep strategy potential',
-    monetization: ['Card packs', 'Cosmetic card backs', 'Battle pass with exclusive cards'],
-    whyItWorks: 'Huge market on PC/mobile, limited competition on Roblox',
-    risks: ['Balancing 100+ cards', 'UI complexity', 'Teaching new players'],
-    firstSteps: ['Core battle system', 'Starter deck design', 'Basic AI opponent']
-  }
-]
-
-const MASHUP_IDEAS = [
-  {
-    name: 'Horror Simulator',
-    template: 'Simulator + Horror',
-    theme: 'Paranormal',
-    coreLoop: 'Investigate haunted locations, collect evidence, upgrade equipment, survive encounters',
-    uniqueHook: 'Phasmophobia-style ghost hunting with progression',
-    monetization: ['Equipment upgrades', 'Flashlight skins', 'Vehicle cosmetics'],
-    whyItWorks: 'Combines horror engagement with simulator progression hooks',
-    risks: ['Balancing scares vs grinding', 'Multiplayer sync', 'Performance with effects'],
-    firstSteps: ['Ghost AI behavior', 'Evidence collection system', 'Basic progression']
-  },
-  {
-    name: 'Tycoon TD',
-    template: 'Tycoon + Tower Defense',
-    theme: 'Medieval',
-    coreLoop: 'Build castle economy, spawn defenders, manage resources during waves, expand territory',
-    uniqueHook: 'Economic management between waves with base building',
-    monetization: ['Castle packs', 'Troop skins', 'Resource boosters'],
-    whyItWorks: 'Two proven mechanics combined - broader appeal',
-    risks: ['Pacing between genres', 'Complexity creep', 'Balancing economy'],
-    firstSteps: ['Resource generation loop', 'Basic wave combat', 'Castle builder UI']
-  },
-  {
-    name: 'Racing Obby',
-    template: 'Racing + Obby',
-    theme: 'Futuristic',
-    coreLoop: 'Race through obstacle courses, unlock vehicles, compete on leaderboards, create custom tracks',
-    uniqueHook: 'Fall Guys style elimination races with vehicles',
-    monetization: ['Vehicle skins', 'Trail effects', 'Track creator pass'],
-    whyItWorks: 'Combines accessibility of obby with competitive racing',
-    risks: ['Vehicle physics', 'Level design variety', 'Matchmaking'],
-    firstSteps: ['Vehicle controller', 'Checkpoint system', 'Obstacle physics']
+    firstSteps: ['20-30 starter units', 'Wave system prototype', 'Gacha UI'],
+    complexity: 'Medium'
   }
 ]
 
 export default function HelperPage() {
   const [selectedStarter, setSelectedStarter] = useState<string | null>(null)
   const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([])
+  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([])
+  const [emergingGames, setEmergingGames] = useState<EmergingGame[]>([])
   const [customInput, setCustomInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
+
+  // Fetch saved groups and emerging games on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [groupsRes, emergingRes] = await Promise.all([
+          fetch('/api/competitor-group').catch(() => null),
+          fetch('/api/emerging?limit=20').catch(() => null)
+        ])
+
+        if (groupsRes?.ok) {
+          const groupsData = await groupsRes.json()
+          setSavedGroups(groupsData.groups || [])
+        }
+
+        if (emergingRes?.ok) {
+          const emergingData = await emergingRes.json()
+          setEmergingGames(emergingData.games || [])
+        }
+
+        setDataLoaded(true)
+      } catch (err) {
+        console.error('Failed to fetch data:', err)
+        setDataLoaded(true)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const generateIdeas = async (starterId: string) => {
     setLoading(true)
     setSelectedStarter(starterId)
 
-    // Simulate loading
-    await new Promise(r => setTimeout(r, 800))
-
     let ideas: GeneratedIdea[] = []
 
-    switch (starterId) {
-      case 'trending':
-        ideas = TRENDING_PATTERNS
-        break
-      case 'underserved':
-        ideas = UNDERSERVED_NICHES
-        break
-      case 'mashup':
-        ideas = MASHUP_IDEAS
-        break
-      case 'improve':
-        ideas = [
-          {
-            name: 'Better Pet Simulator',
-            template: 'Simulator',
-            theme: 'Pets',
-            coreLoop: 'Hatch eggs, collect pets, fuse for rarer ones, explore worlds, trade with players',
-            uniqueHook: 'Focus on pet personalities and mini-games with your pets',
-            monetization: ['Premium eggs', 'Pet accessories', 'VIP worlds'],
-            whyItWorks: 'Improves on existing formula with more pet interaction',
-            risks: ['Competing with established games', 'Content expectations', 'Trading economy'],
-            firstSteps: ['Core hatching system', 'Pet stats and leveling', 'First 20 pets']
-          },
-          {
-            name: 'Improved Horror Experience',
-            template: 'Horror',
-            theme: 'Psychological',
-            coreLoop: 'Explore environments, solve puzzles, evade threats, uncover story, survive',
-            uniqueHook: 'Dynamic scares that adapt to player behavior',
-            monetization: ['Chapter DLCs', 'Cosmetics', 'Hint system'],
-            whyItWorks: 'Most Roblox horror is jumpscare-focused - room for psychological horror',
-            risks: ['Higher development bar', 'Replay value', 'Age appropriateness'],
-            firstSteps: ['Scare system design', 'First puzzle set', 'Monster AI']
-          }
-        ]
-        break
-      case 'theme':
-        ideas = [
-          {
-            name: 'Dinosaur Tycoon',
-            template: 'Tycoon',
-            theme: 'Dinosaurs',
-            coreLoop: 'Build dinosaur park, breed dinos, attract visitors, manage resources',
-            uniqueHook: 'Jurassic Park style with genetics and breeding',
-            monetization: ['Rare dino eggs', 'Park decorations', 'Premium enclosures'],
-            whyItWorks: 'Dinosaurs are evergreen popular with kids',
-            risks: ['Asset creation for dinos', 'Balancing visitor AI', 'Performance'],
-            firstSteps: ['Dino breeding system', 'Enclosure building', 'Visitor AI']
-          },
-          {
-            name: 'Space Simulator',
-            template: 'Simulator',
-            theme: 'Space',
-            coreLoop: 'Mine asteroids, upgrade ship, explore planets, trade resources, build space station',
-            uniqueHook: 'Open world space exploration with base building',
-            monetization: ['Ship skins', 'Space suits', 'Premium planets'],
-            whyItWorks: 'Space theme is underutilized on Roblox',
-            risks: ['Scale of space', 'Performance with large maps', 'Content variety'],
-            firstSteps: ['Ship flying mechanics', 'Mining system', 'First 3 planets']
-          }
-        ]
-        break
-      case 'random':
-        const allIdeas = [...TRENDING_PATTERNS, ...UNDERSERVED_NICHES, ...MASHUP_IDEAS]
-        const shuffled = allIdeas.sort(() => Math.random() - 0.5)
-        ideas = shuffled.slice(0, 3)
-        break
+    try {
+      switch (starterId) {
+        case 'trending':
+          ideas = await generateTrendingIdeas()
+          break
+        case 'saved':
+          ideas = generateFromSavedGroups()
+          break
+        case 'underserved':
+          ideas = generateUnderservedIdeas()
+          break
+        case 'mashup':
+          ideas = generateMashupIdeas()
+          break
+        case 'improve':
+          ideas = generateImprovementIdeas()
+          break
+        case 'random':
+          ideas = await generateRandomIdeas()
+          break
+      }
+    } catch (err) {
+      console.error('Error generating ideas:', err)
+      ideas = FALLBACK_TRENDING
     }
 
     setGeneratedIdeas(ideas)
     setLoading(false)
+  }
+
+  const generateTrendingIdeas = async (): Promise<GeneratedIdea[]> => {
+    // If we have emerging games, group them by vertical and generate ideas
+    if (emergingGames.length > 0) {
+      const verticalGroups: Record<string, EmergingGame[]> = {}
+
+      for (const game of emergingGames) {
+        const vertical = game.classification?.vertical || 'Simulator'
+        if (!verticalGroups[vertical]) {
+          verticalGroups[vertical] = []
+        }
+        verticalGroups[vertical].push(game)
+      }
+
+      // Find verticals with multiple games (trending patterns)
+      const trendingVerticals = Object.entries(verticalGroups)
+        .filter(([_, games]) => games.length >= 2)
+        .sort((a, b) => {
+          const avgRevA = a[1].reduce((sum, g) => sum + g.metrics.estimatedRevenue, 0) / a[1].length
+          const avgRevB = b[1].reduce((sum, g) => sum + g.metrics.estimatedRevenue, 0) / b[1].length
+          return avgRevB - avgRevA
+        })
+        .slice(0, 3)
+
+      return trendingVerticals.map(([vertical, games]) => {
+        const avgRevenue = Math.round(games.reduce((sum, g) => sum + g.metrics.estimatedRevenue, 0) / games.length)
+        const theme = games[0].classification?.theme || 'Fantasy'
+        const coreLoop = games[0].classification?.coreLoop || 'Collect, upgrade, progress'
+
+        return {
+          name: `${theme} ${vertical}`,
+          template: vertical,
+          theme: theme,
+          coreLoop: coreLoop,
+          uniqueHook: `Based on ${games.length} trending games with avg $${avgRevenue.toLocaleString()}/mo`,
+          monetization: getDefaultMonetization(vertical),
+          whyItWorks: `${games.length} emerging games using this formula. Recent success indicates market demand.`,
+          risks: getDefaultRisks(vertical),
+          firstSteps: getDefaultFirstSteps(vertical),
+          complexity: getComplexity(vertical),
+          sourceData: {
+            gamesAnalyzed: games.length,
+            avgRevenue,
+            qualificationScore: avgRevenue > 10000 ? 80 : 50
+          }
+        }
+      })
+    }
+
+    return FALLBACK_TRENDING
+  }
+
+  const generateFromSavedGroups = (): GeneratedIdea[] => {
+    if (savedGroups.length === 0) {
+      return [{
+        name: 'No Saved Research',
+        template: 'Research Required',
+        theme: 'Unknown',
+        coreLoop: 'First, analyze some competitor groups using the Analyze page',
+        uniqueHook: 'Save competitor group research to generate ideas based on real patterns',
+        monetization: [],
+        whyItWorks: 'Ideas from saved research are grounded in proven patterns',
+        risks: ['No research data available yet'],
+        firstSteps: ['Go to /analyze', 'Enter 5-10 similar game Place IDs', 'Save the competitor group']
+      }]
+    }
+
+    return savedGroups.slice(0, 3).map(group => {
+      const guide = group.analysis_notes?.replicationGuide || {}
+      const patterns = group.analysis_notes?.patterns || {}
+      const metrics = group.analysis_notes?.metrics || {}
+
+      return {
+        name: `${group.group_name} Clone`,
+        template: group.structural_characteristics?.vertical || 'Unknown',
+        theme: group.structural_characteristics?.theme || 'Unknown',
+        coreLoop: group.structural_characteristics?.dominantCoreLoop || 'Based on analyzed competitors',
+        uniqueHook: guide.differentiation?.[0] || 'Add your unique twist to the proven formula',
+        monetization: patterns.mustHave?.monetization || guide.mustHave?.filter((m: string) => m.toLowerCase().includes('pass') || m.toLowerCase().includes('gamepass')) || [],
+        whyItWorks: `Based on ${metrics.avgRevenue ? `$${metrics.avgRevenue.toLocaleString()}/mo avg` : 'your research'}. Qualification score: ${group.qualification_score}/100`,
+        risks: guide.pitfalls || ['See your saved research for detailed pitfalls'],
+        firstSteps: guide.coreRequirements || guide.mustHave?.slice(0, 3) || ['Implement core loop', 'Add monetization', 'Test retention'],
+        complexity: 'Medium',
+        sourceData: {
+          gamesAnalyzed: 5,
+          avgRevenue: metrics.avgRevenue || 0,
+          qualificationScore: group.qualification_score
+        }
+      }
+    })
+  }
+
+  const generateUnderservedIdeas = (): GeneratedIdea[] => {
+    // Ideas for verticals with less competition
+    return [
+      {
+        name: 'Cooking Competition Game',
+        template: 'Simulation',
+        theme: 'Food/Cooking',
+        coreLoop: 'Compete in timed cooking challenges, unlock recipes, customize restaurant, climb leaderboards',
+        uniqueHook: 'Real-time multiplayer cooking competitions like MasterChef',
+        monetization: ['Recipe packs', 'Kitchen cosmetics', 'Chef outfits'],
+        whyItWorks: 'Cooking games popular on mobile but underrepresented on Roblox',
+        risks: ['Niche audience', 'Complex cooking mechanics', 'Recipe variety needed'],
+        firstSteps: ['Core cooking minigame', 'Recipe unlock system', 'Kitchen customization'],
+        complexity: 'Medium'
+      },
+      {
+        name: 'Music/Rhythm Game',
+        template: 'Rhythm',
+        theme: 'Music',
+        coreLoop: 'Hit notes to the beat, unlock songs, customize character, compete for high scores',
+        uniqueHook: 'User-generated beatmaps with social sharing',
+        monetization: ['Song packs', 'Character skins', 'Instruments'],
+        whyItWorks: 'Rhythm games have passionate communities. Few quality options on Roblox.',
+        risks: ['Music licensing', 'Timing precision on Roblox', 'Content creation tools'],
+        firstSteps: ['Note highway system', 'Scoring mechanics', 'Song import system'],
+        complexity: 'Medium-High'
+      },
+      {
+        name: 'Card Battler',
+        template: 'Strategy',
+        theme: 'Fantasy',
+        coreLoop: 'Build decks, battle AI or players, earn cards from victories, climb ranked ladder',
+        uniqueHook: 'Simplified mechanics for younger audience with deep strategy potential',
+        monetization: ['Card packs', 'Cosmetic card backs', 'Battle pass with exclusive cards'],
+        whyItWorks: 'Huge market on PC/mobile, limited competition on Roblox',
+        risks: ['Balancing 100+ cards', 'UI complexity', 'Teaching new players'],
+        firstSteps: ['Core battle system', 'Starter deck design', 'Basic AI opponent'],
+        complexity: 'High'
+      }
+    ]
+  }
+
+  const generateMashupIdeas = (): GeneratedIdea[] => {
+    const baseIdeas = [
+      {
+        name: 'Horror Simulator',
+        template: 'Simulator + Horror',
+        theme: 'Paranormal',
+        coreLoop: 'Investigate haunted locations, collect evidence, upgrade equipment, survive encounters',
+        uniqueHook: 'Phasmophobia-style ghost hunting with progression',
+        monetization: ['Equipment upgrades', 'Flashlight skins', 'Vehicle cosmetics'],
+        whyItWorks: 'Combines horror engagement with simulator progression hooks',
+        risks: ['Balancing scares vs grinding', 'Multiplayer sync', 'Performance with effects'],
+        firstSteps: ['Ghost AI behavior', 'Evidence collection system', 'Basic progression'],
+        complexity: 'Medium'
+      },
+      {
+        name: 'Tycoon Tower Defense',
+        template: 'Tycoon + Tower Defense',
+        theme: 'Medieval',
+        coreLoop: 'Build castle economy, spawn defenders, manage resources during waves, expand territory',
+        uniqueHook: 'Economic management between waves with base building',
+        monetization: ['Castle packs', 'Troop skins', 'Resource boosters'],
+        whyItWorks: 'Two proven mechanics combined - broader appeal',
+        risks: ['Pacing between genres', 'Complexity creep', 'Balancing economy'],
+        firstSteps: ['Resource generation loop', 'Basic wave combat', 'Castle builder UI'],
+        complexity: 'Medium-High'
+      }
+    ]
+
+    // If we have saved groups, try to create mashups from them
+    if (savedGroups.length >= 2) {
+      const group1 = savedGroups[0]
+      const group2 = savedGroups[1]
+
+      baseIdeas.push({
+        name: `${group1.structural_characteristics?.vertical || 'Unknown'} x ${group2.structural_characteristics?.theme || 'Unknown'}`,
+        template: `${group1.structural_characteristics?.vertical} + ${group2.structural_characteristics?.vertical}`,
+        theme: group2.structural_characteristics?.theme || 'Mixed',
+        coreLoop: `Combine ${group1.structural_characteristics?.dominantCoreLoop || 'Formula 1'} with ${group2.structural_characteristics?.theme || 'Theme 2'} aesthetics`,
+        uniqueHook: 'Novel combination of proven formulas from your research',
+        monetization: ['Combined monetization from both formulas'],
+        whyItWorks: 'Based on your qualified competitor groups',
+        risks: ['Complexity from combining mechanics', 'May confuse target audience'],
+        firstSteps: ['Identify which mechanics to combine', 'Create unified progression', 'Test with target audience'],
+        complexity: 'Medium-High'
+      })
+    }
+
+    return baseIdeas
+  }
+
+  const generateImprovementIdeas = (): GeneratedIdea[] => {
+    // If we have emerging games, suggest improvements to top performers
+    if (emergingGames.length > 0) {
+      return emergingGames.slice(0, 3).map(game => ({
+        name: `Better ${game.name}`,
+        template: game.classification?.vertical || 'Simulator',
+        theme: game.classification?.theme || 'Various',
+        coreLoop: game.classification?.coreLoop || 'Study the original and improve',
+        uniqueHook: 'Better UX, more content, unique twist on proven formula',
+        monetization: getDefaultMonetization(game.classification?.vertical || 'Simulator'),
+        whyItWorks: `${game.name} is doing $${game.metrics.estimatedRevenue.toLocaleString()}/mo - formula is proven`,
+        risks: ['Competing with established game', 'Need clear differentiation', 'Player loyalty to original'],
+        firstSteps: ['Play the original extensively', 'Identify pain points', 'Build improved version'],
+        complexity: 'Medium',
+        sourceData: {
+          gamesAnalyzed: 1,
+          avgRevenue: game.metrics.estimatedRevenue,
+          qualificationScore: 70
+        }
+      }))
+    }
+
+    return [
+      {
+        name: 'Better Pet Simulator',
+        template: 'Simulator',
+        theme: 'Pets',
+        coreLoop: 'Hatch eggs, collect pets, fuse for rarer ones, explore worlds, trade with players',
+        uniqueHook: 'Focus on pet personalities and mini-games with your pets',
+        monetization: ['Premium eggs', 'Pet accessories', 'VIP worlds'],
+        whyItWorks: 'Improves on existing formula with more pet interaction',
+        risks: ['Competing with established games', 'Content expectations', 'Trading economy'],
+        firstSteps: ['Core hatching system', 'Pet stats and leveling', 'First 20 pets'],
+        complexity: 'Medium'
+      },
+      {
+        name: 'Improved Horror Experience',
+        template: 'Horror',
+        theme: 'Psychological',
+        coreLoop: 'Explore environments, solve puzzles, evade threats, uncover story, survive',
+        uniqueHook: 'Dynamic scares that adapt to player behavior',
+        monetization: ['Chapter DLCs', 'Cosmetics', 'Hint system'],
+        whyItWorks: 'Most Roblox horror is jumpscare-focused - room for psychological horror',
+        risks: ['Higher development bar', 'Replay value', 'Age appropriateness'],
+        firstSteps: ['Scare system design', 'First puzzle set', 'Monster AI'],
+        complexity: 'Medium-High'
+      }
+    ]
+  }
+
+  const generateRandomIdeas = async (): Promise<GeneratedIdea[]> => {
+    const allIdeas = [
+      ...FALLBACK_TRENDING,
+      ...generateUnderservedIdeas(),
+      ...generateMashupIdeas()
+    ]
+
+    // Add ideas from research if available
+    if (savedGroups.length > 0) {
+      allIdeas.push(...generateFromSavedGroups())
+    }
+
+    // Shuffle and return 3
+    return allIdeas.sort(() => Math.random() - 0.5).slice(0, 3)
+  }
+
+  // Helper functions
+  const getDefaultMonetization = (vertical: string): string[] => {
+    const map: Record<string, string[]> = {
+      'Simulator': ['2x earnings pass', 'Auto-collect', 'VIP bundle', 'Premium areas'],
+      'Tower Defense': ['Gacha summons', 'Battle pass', 'Premium currency', 'Trading passes'],
+      'Tycoon': ['2x earnings', 'Auto-manager', 'Premium buildings', 'Decorations'],
+      'Horror': ['Extra lives', 'Cosmetics', 'Chapter unlocks', 'Hints'],
+      'Obby': ['Skip stages', 'Trails', 'Pets', 'Checkpoints'],
+      'Survival': ['Starter kits', 'Base blueprints', 'Cosmetics', 'Premium resources']
+    }
+    return map[vertical] || ['Gamepasses', 'Premium currency', 'Cosmetics']
+  }
+
+  const getDefaultRisks = (vertical: string): string[] => {
+    const map: Record<string, string[]> = {
+      'Simulator': ['Balancing progression curve', 'Content variety', 'Player fatigue'],
+      'Tower Defense': ['Unit balancing', 'Content expectations', 'Gacha fairness'],
+      'Tycoon': ['Performance optimization', 'Scaling issues', 'Progression pacing'],
+      'Horror': ['Replay value', 'Age ratings', 'Scare effectiveness'],
+      'Obby': ['Level design variety', 'Difficulty curve', 'Competition'],
+      'Survival': ['Multiplayer sync', 'Performance', 'Griefing']
+    }
+    return map[vertical] || ['Market competition', 'Development complexity', 'Content needs']
+  }
+
+  const getDefaultFirstSteps = (vertical: string): string[] => {
+    const map: Record<string, string[]> = {
+      'Simulator': ['Core click/collect loop', 'Currency + upgrade system', 'Prestige mechanics'],
+      'Tower Defense': ['Wave system', 'Unit placement', 'Upgrade paths'],
+      'Tycoon': ['Building placement', 'Income generation', 'Employee AI'],
+      'Horror': ['Monster AI', 'Scare triggers', 'Objective system'],
+      'Obby': ['Obstacle physics', 'Checkpoint system', 'Level design'],
+      'Survival': ['Resource gathering', 'Crafting system', 'Health/hunger']
+    }
+    return map[vertical] || ['Core gameplay loop', 'Progression system', 'Basic monetization']
+  }
+
+  const getComplexity = (vertical: string): string => {
+    const map: Record<string, string> = {
+      'Simulator': 'Low-Medium',
+      'Obby': 'Low',
+      'Tycoon': 'Low-Medium',
+      'Tower Defense': 'Medium',
+      'Horror': 'Medium',
+      'Survival': 'Medium-High',
+      'Action RPG': 'High'
+    }
+    return map[vertical] || 'Medium'
   }
 
   return (
@@ -226,8 +471,23 @@ export default function HelperPage() {
       <div>
         <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Brainstorming</div>
         <h1 className="text-3xl font-bold">Idea Helper</h1>
-        <p className="text-gray-400 mt-1">Get help brainstorming your next Roblox game concept</p>
+        <p className="text-gray-400 mt-1">Get data-driven game ideas based on real market research</p>
       </div>
+
+      {/* Data Status */}
+      {dataLoaded && (
+        <div className="flex gap-4 text-sm">
+          {emergingGames.length > 0 && (
+            <span className="text-green-400">{emergingGames.length} emerging games loaded</span>
+          )}
+          {savedGroups.length > 0 && (
+            <span className="text-blue-400">{savedGroups.length} saved groups available</span>
+          )}
+          {emergingGames.length === 0 && savedGroups.length === 0 && (
+            <span className="text-yellow-400">No research data - using default patterns</span>
+          )}
+        </div>
+      )}
 
       {/* Starter Options */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -243,6 +503,9 @@ export default function HelperPage() {
             }`}
           >
             <p className="font-medium">{starter.label}</p>
+            <p className={`text-xs mt-1 ${selectedStarter === starter.id ? 'text-gray-600' : 'text-gray-500'}`}>
+              {starter.description}
+            </p>
           </button>
         ))}
       </div>
@@ -271,8 +534,8 @@ export default function HelperPage() {
       {/* Loading */}
       {loading && (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-red-500"></div>
-          <p className="text-gray-400 mt-4">Generating ideas...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-green-500"></div>
+          <p className="text-gray-400 mt-4">Generating ideas from research data...</p>
         </div>
       )}
 
@@ -285,14 +548,34 @@ export default function HelperPage() {
             <div key={index} className="bg-[#0f0f0f] border border-gray-800 rounded-xl overflow-hidden">
               {/* Header */}
               <div className="p-6 border-b border-gray-800">
-                <h3 className="text-2xl font-bold">{idea.name}</h3>
-                <div className="flex gap-2 mt-2">
-                  <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm">
-                    {idea.template}
-                  </span>
-                  <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm">
-                    {idea.theme}
-                  </span>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold">{idea.name}</h3>
+                    <div className="flex gap-2 mt-2">
+                      <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm">
+                        {idea.template}
+                      </span>
+                      <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm">
+                        {idea.theme}
+                      </span>
+                      {idea.complexity && (
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          idea.complexity === 'Low' ? 'bg-green-900/50 text-green-400' :
+                          idea.complexity === 'Low-Medium' ? 'bg-blue-900/50 text-blue-400' :
+                          idea.complexity === 'Medium' ? 'bg-yellow-900/50 text-yellow-400' :
+                          'bg-red-900/50 text-red-400'
+                        }`}>
+                          {idea.complexity}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {idea.sourceData && (
+                    <div className="text-right text-sm">
+                      <div className="text-gray-500">Based on {idea.sourceData.gamesAnalyzed} games</div>
+                      <div className="text-green-400">${idea.sourceData.avgRevenue.toLocaleString()}/mo avg</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -359,16 +642,16 @@ export default function HelperPage() {
               {/* Actions */}
               <div className="p-4 border-t border-gray-800 flex gap-3">
                 <Link
-                  href={`/idea?template=${idea.template.split(' ')[0].toLowerCase()}&theme=${idea.theme}`}
+                  href={`/analyze`}
                   className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-colors"
                 >
-                  Validate This Idea
+                  Find Competitors to Analyze
                 </Link>
                 <Link
-                  href={`/discover?query=${encodeURIComponent(idea.template)}`}
+                  href={`/emerging?vertical=${encodeURIComponent(idea.template)}`}
                   className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 rounded-lg text-sm font-medium transition-colors"
                 >
-                  Find Competitors
+                  View Emerging Games
                 </Link>
               </div>
             </div>
@@ -383,7 +666,7 @@ export default function HelperPage() {
             Select an option above to get game idea suggestions
           </p>
           <p className="text-gray-600 text-sm">
-            Ideas are based on proven patterns and market analysis
+            Ideas are generated from real market data and your saved research
           </p>
         </div>
       )}
