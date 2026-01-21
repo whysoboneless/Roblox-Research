@@ -18,7 +18,6 @@ interface Game {
   dates: { created: string }
 }
 
-// Pattern detection based on game name/genre keywords
 const PATTERN_KEYWORDS: Record<string, { keywords: string[]; pattern: string; color: string }> = {
   'anime-td': {
     keywords: ['anime', 'tower defense', 'defenders', 'adventures'],
@@ -64,7 +63,6 @@ const PATTERN_KEYWORDS: Record<string, { keywords: string[]; pattern: string; co
 
 function detectPattern(game: Game): { pattern: string; color: string } | null {
   const searchText = `${game.name} ${game.genre || ''}`.toLowerCase()
-
   for (const [, data] of Object.entries(PATTERN_KEYWORDS)) {
     for (const keyword of data.keywords) {
       if (searchText.includes(keyword.toLowerCase())) {
@@ -75,12 +73,7 @@ function detectPattern(game: Game): { pattern: string; color: string } | null {
   return null
 }
 
-// Pattern strategies for reverse engineering
-const PATTERN_STRATEGIES: Record<string, {
-  retention: string[]
-  monetization: string[]
-  viral: string[]
-}> = {
+const PATTERN_STRATEGIES: Record<string, { retention: string[]; monetization: string[]; viral: string[] }> = {
   'Anime TD': {
     retention: ['Gacha/summon system', 'Character collection', 'Co-op multiplayer', 'Meta progression'],
     monetization: ['Premium currency', 'Battle passes', 'Limited banners', 'VIP servers'],
@@ -188,9 +181,11 @@ export default function DiscoverPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
+        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Market Research</div>
         <h1 className="text-3xl font-bold">Discover Games</h1>
-        <p className="text-gray-400 mt-1">Browse games and reverse-engineer their strategies</p>
+        <p className="text-gray-400 mt-1">Browse top games and reverse-engineer their strategies</p>
       </div>
 
       {/* Categories */}
@@ -235,7 +230,7 @@ export default function DiscoverPage() {
           <div className="flex items-center justify-between">
             <span className="text-gray-500 text-sm">{games.length} games</span>
             {selectedGames.length > 0 && (
-              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium">
+              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">
                 Analyze {selectedGames.length} Selected
               </Link>
             )}
@@ -256,10 +251,9 @@ export default function DiscoverPage() {
                 <div
                   key={game.placeId}
                   className={`rounded-xl overflow-hidden transition-all ${
-                    isSelected ? 'ring-2 ring-white' : ''
+                    isSelected ? 'ring-2 ring-green-500' : ''
                   } ${isExpanded ? 'bg-[#111]' : 'bg-[#0f0f0f]'} border border-gray-800 hover:border-gray-700`}
                 >
-                  {/* Main Card */}
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0 pr-2">
@@ -269,21 +263,19 @@ export default function DiscoverPage() {
                       <button
                         onClick={(e) => toggleSelect(game.placeId, e)}
                         className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isSelected ? 'bg-white border-white text-black' : 'border-gray-600 hover:border-gray-400'
+                          isSelected ? 'bg-green-500 border-green-500 text-black' : 'border-gray-600 hover:border-gray-400'
                         }`}
                       >
-                        {isSelected && <span className="text-xs">✓</span>}
+                        {isSelected && <span className="text-xs font-bold">&#10003;</span>}
                       </button>
                     </div>
 
-                    {/* Pattern Badge */}
                     {detectedPattern && (
                       <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-3 ${detectedPattern.color}`}>
-                        {detectedPattern.pattern} Pattern
+                        {detectedPattern.pattern}
                       </div>
                     )}
 
-                    {/* Metrics */}
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <div className="text-gray-500 text-xs">CCU</div>
@@ -305,18 +297,16 @@ export default function DiscoverPage() {
                       </div>
                     </div>
 
-                    {/* Expand Button */}
                     {detectedPattern && (
                       <button
                         onClick={() => setExpandedGame(isExpanded ? null : game.placeId)}
                         className="w-full mt-4 py-2 text-sm text-gray-400 hover:text-white border-t border-gray-800 transition-colors"
                       >
-                        {isExpanded ? 'Hide Strategy' : 'View Strategy →'}
+                        {isExpanded ? 'Hide Strategy' : 'View Strategy'}
                       </button>
                     )}
                   </div>
 
-                  {/* Expanded Strategy Section */}
                   {isExpanded && strategies && (
                     <div className="px-4 pb-4 space-y-4 border-t border-gray-800 pt-4">
                       <div>
@@ -354,12 +344,12 @@ export default function DiscoverPage() {
 
       {/* Selection Footer */}
       {selectedGames.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-gray-800 p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-gray-800 p-4 z-50">
           <div className="container mx-auto flex items-center justify-between">
             <span className="text-gray-400">{selectedGames.length} selected</span>
             <div className="flex gap-3">
               <button onClick={() => setSelectedGames([])} className="px-4 py-2 text-gray-400 hover:text-white">Clear</button>
-              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-6 py-2 bg-white text-black rounded-lg font-medium">
+              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium">
                 Analyze Selected
               </Link>
             </div>

@@ -126,14 +126,16 @@ const PATTERNS = [
 export default function PatternsPage() {
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Pattern Library</h1>
-        <p className="text-gray-400 mt-1">Proven game formats and reverse-engineering guides</p>
+        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Strategy Library</div>
+        <h1 className="text-3xl font-bold">Proven Patterns</h1>
+        <p className="text-gray-400 mt-1">Game formats with documented success and replication guides</p>
       </div>
 
       <div className="grid gap-6">
         {PATTERNS.map((pattern) => (
-          <div key={pattern.id} className="bg-[#1a1a1a] border border-gray-800 rounded-xl overflow-hidden">
+          <div key={pattern.id} className="bg-[#0f0f0f] border border-gray-800 rounded-xl overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-gray-800">
               <div className="flex items-start justify-between">
@@ -154,7 +156,7 @@ export default function PatternsPage() {
             </div>
 
             {/* Core Mechanic */}
-            <div className="p-6 bg-[#111] border-b border-gray-800">
+            <div className="p-6 bg-[#0a0a0a] border-b border-gray-800">
               <h3 className="text-sm text-gray-500 mb-2">Core Mechanic</h3>
               <p className="text-lg">{pattern.mechanic}</p>
             </div>
@@ -164,7 +166,7 @@ export default function PatternsPage() {
               <h3 className="text-sm text-gray-500 mb-2">Example Games</h3>
               <div className="flex flex-wrap gap-2">
                 {pattern.examples.map((ex) => (
-                  <span key={ex} className="px-3 py-1 bg-[#111] rounded-lg text-sm">
+                  <span key={ex} className="px-3 py-1 bg-[#1a1a1a] rounded-lg text-sm">
                     {ex}
                   </span>
                 ))}
@@ -205,7 +207,7 @@ export default function PatternsPage() {
                 <ul className="space-y-2">
                   {pattern.viral.map((v, i) => (
                     <li key={i} className="text-sm text-gray-400 flex items-start gap-2">
-                      <span className="text-blue-500">↗</span>
+                      <span className="text-blue-500">^</span>
                       {v}
                     </li>
                   ))}
@@ -214,7 +216,7 @@ export default function PatternsPage() {
             </div>
 
             {/* Implementation Guide */}
-            <div className="p-6 bg-[#111] border-t border-gray-800">
+            <div className="p-6 bg-[#0a0a0a] border-t border-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-sm text-gray-500 mb-3">Core Requirements</h3>

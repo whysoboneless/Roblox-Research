@@ -129,7 +129,9 @@ export default function IdeaPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div>
+        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Idea Validation</div>
         <h1 className="text-3xl font-bold">Qualify Your Game Idea</h1>
         <p className="text-gray-400 mt-1">AI will analyze your concept and create a custom game plan</p>
       </div>

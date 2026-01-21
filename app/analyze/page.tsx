@@ -8,19 +8,14 @@ interface Game {
   name: string
   genre: string
   thumbnailUrl: string
-  creator: {
-    name: string
-    type: string
-  }
+  creator: { name: string; type: string }
   metrics: {
     visits: number
     currentPlayers: number
     likeRatio: string
     estimatedRevenue: number
   }
-  dates: {
-    created: string
-  }
+  dates: { created: string }
   classification: {
     genre: string
     subGenre: string
@@ -41,17 +36,8 @@ interface Analysis {
   }
   qualified: boolean
   score: number
-  checks: Array<{
-    step: string
-    passed: boolean
-    detail: string
-  }>
-  emergingStars: Array<{
-    name: string
-    placeId: string
-    ccu: number
-    revenue: number
-  }>
+  checks: Array<{ step: string; passed: boolean; detail: string }>
+  emergingStars: Array<{ name: string; placeId: string; ccu: number; revenue: number }>
   recommendations: string[]
 }
 
@@ -63,12 +49,10 @@ function AnalyzeContent() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [error, setError] = useState('')
 
-  // Auto-fill from URL params (from Discover page)
   useEffect(() => {
     const ids = searchParams.get('ids')
     if (ids) {
       setPlaceIds(ids)
-      // Auto-analyze if IDs provided
       setTimeout(() => {
         document.getElementById('analyze-btn')?.click()
       }, 100)
@@ -107,8 +91,9 @@ function AnalyzeContent() {
 
       setGames(data.games)
       setAnalysis(data.analysis)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Analysis failed'
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -116,28 +101,31 @@ function AnalyzeContent() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
+        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Competitor Intelligence</div>
         <h1 className="text-3xl font-bold">Analyze Competitor Group</h1>
         <p className="text-gray-400 mt-1">Enter Roblox Place IDs to analyze games and check niche qualification</p>
       </div>
 
       {/* Input Section */}
-      <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
+      <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
         <label className="block text-sm font-medium mb-2">Place IDs</label>
         <textarea
           value={placeIds}
           onChange={(e) => setPlaceIds(e.target.value)}
           placeholder="Enter Place IDs separated by commas (e.g., 2753915549, 4587034896, 4996049426)"
-          className="w-full h-24 bg-[#111] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+          className="w-full h-24 bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
         />
         <p className="text-gray-500 text-xs mt-2">
           Find Place IDs in Roblox game URLs: roblox.com/games/<strong>2753915549</strong>/Blox-Fruits
         </p>
 
         <button
+          id="analyze-btn"
           onClick={handleAnalyze}
           disabled={loading || !placeIds.trim()}
-          className="mt-4 px-6 py-3 bg-red-600 hover:bg-red-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+          className="mt-4 px-6 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
         >
           {loading ? 'Analyzing...' : 'Analyze Games'}
         </button>
@@ -158,7 +146,7 @@ function AnalyzeContent() {
               <div>
                 <h2 className="text-2xl font-bold">{analysis.groupName || 'Competitor Group'}</h2>
                 <p className={`text-lg mt-1 ${analysis.qualified ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {analysis.qualified ? '✓ QUALIFIED' : '✗ NOT QUALIFIED'}
+                  {analysis.qualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
                 </p>
               </div>
               <div className="text-right">
@@ -169,7 +157,7 @@ function AnalyzeContent() {
           </div>
 
           {/* Classification */}
-          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
+          <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
             <h3 className="text-lg font-bold mb-4">Structural Characteristics</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
@@ -196,11 +184,11 @@ function AnalyzeContent() {
           </div>
 
           {/* Qualification Checks */}
-          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
+          <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
             <h3 className="text-lg font-bold mb-4">Qualification Checks</h3>
             <div className="space-y-3">
               {analysis.checks.map((check, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-[#111] rounded-lg">
+                <div key={i} className="flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg">
                   <span className={`text-xl ${check.passed ? 'text-green-400' : 'text-red-400'}`}>
                     {check.passed ? '✓' : '✗'}
                   </span>
@@ -215,11 +203,11 @@ function AnalyzeContent() {
 
           {/* Emerging Stars */}
           {analysis.emergingStars.length > 0 && (
-            <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-lg font-bold mb-4">⭐ Emerging Stars</h3>
+            <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-bold mb-4">Emerging Stars</h3>
               <div className="space-y-2">
                 {analysis.emergingStars.map((star) => (
-                  <div key={star.placeId} className="flex items-center justify-between p-3 bg-[#111] rounded-lg">
+                  <div key={star.placeId} className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-lg">
                     <span className="font-medium">{star.name}</span>
                     <div className="flex gap-4 text-sm">
                       <span className="text-green-400">{star.ccu.toLocaleString()} CCU</span>
@@ -232,8 +220,8 @@ function AnalyzeContent() {
           )}
 
           {/* Recommendations */}
-          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
-            <h3 className="text-lg font-bold mb-4">💡 Recommendations</h3>
+          <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
+            <h3 className="text-lg font-bold mb-4">Recommendations</h3>
             <ul className="space-y-2">
               {analysis.recommendations.map((rec, i) => (
                 <li key={i} className="flex items-start gap-2 text-gray-300">
@@ -245,7 +233,7 @@ function AnalyzeContent() {
           </div>
 
           {/* Games Table */}
-          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6 overflow-x-auto">
+          <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 overflow-x-auto">
             <h3 className="text-lg font-bold mb-4">Games Analyzed ({games.length})</h3>
             <table className="w-full text-sm">
               <thead>
@@ -253,7 +241,7 @@ function AnalyzeContent() {
                   <th className="pb-3 pr-4">Game</th>
                   <th className="pb-3 pr-4">CCU</th>
                   <th className="pb-3 pr-4">Visits</th>
-                  <th className="pb-3 pr-4">Like %</th>
+                  <th className="pb-3 pr-4">Rating</th>
                   <th className="pb-3 pr-4">Est. Rev/mo</th>
                   <th className="pb-3">Created</th>
                 </tr>
