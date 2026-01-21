@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabase } from '@/lib/supabase'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/rate-limit'
 
 // Only create Anthropic client if API key is available
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null
@@ -491,6 +492,13 @@ Return JSON only:
 }
 
 export async function POST(request: Request) {
+  // Rate limiting - this is an expensive endpoint
+  const clientId = getClientIdentifier(request)
+  const { allowed, resetIn } = checkRateLimit(clientId, 'analyze-group')
+  if (!allowed) {
+    return rateLimitResponse(resetIn)
+  }
+
   try {
     const body = await request.json()
     const { placeIds, groupName } = body

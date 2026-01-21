@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import WorkflowGuide from '@/components/WorkflowGuide'
+import FirstTimeHint from '@/components/FirstTimeHint'
 
 interface GameMetrics {
   ccu: number
@@ -211,6 +213,16 @@ function AnalyzeContent() {
 
   return (
     <div className="space-y-6">
+      {/* Workflow Progress */}
+      <WorkflowGuide />
+
+      {/* First Time Hint */}
+      <FirstTimeHint id="analyze-intro" title="What happens here?">
+        AI will analyze each game to find <strong>what they have in common</strong> - the core loop,
+        monetization strategy, and retention hooks. Save your analysis to use in the Idea Lab for
+        building your own game.
+      </FirstTimeHint>
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Analyze Games</h1>

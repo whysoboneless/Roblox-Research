@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from '@/lib/rate-limit'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null
 
 // System prompt for Roblox game analysis
 const SYSTEM_PROMPT = `You are an expert Roblox game developer and market analyst. You understand:
@@ -23,11 +24,18 @@ When helping users:
 Keep responses concise but comprehensive. Use bullet points for lists.`
 
 export async function POST(request: Request) {
+  // Rate limiting
+  const clientId = getClientIdentifier(request)
+  const { allowed, resetIn } = checkRateLimit(clientId, 'ai')
+  if (!allowed) {
+    return rateLimitResponse(resetIn)
+  }
+
   try {
     const { action, data } = await request.json()
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
+    if (!anthropic) {
+      return NextResponse.json({ error: 'AI features not configured' }, { status: 503 })
     }
 
     let prompt = ''
@@ -155,7 +163,7 @@ Return ONLY valid JSON, no other text.`
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }
 
-    const message = await anthropic.messages.create({
+    const message = await anthropic!.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       messages: [

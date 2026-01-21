@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import WorkflowGuide from '@/components/WorkflowGuide'
+import FirstTimeHint from '@/components/FirstTimeHint'
 
 interface Game {
   placeId: string
@@ -201,6 +203,16 @@ export default function EmergingStarsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Workflow Progress */}
+      <WorkflowGuide />
+
+      {/* First Time Hint */}
+      <FirstTimeHint id="emerging-intro" title="How This Works">
+        These are <strong>new games (under 6 months old)</strong> that are gaining players fast.
+        Click <strong>&quot;Analyze&quot;</strong> on any game to see what patterns make it successful.
+        The AI will automatically find similar games to compare.
+      </FirstTimeHint>
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Discover Trends</h1>

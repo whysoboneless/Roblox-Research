@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import FirstTimeHint from '@/components/FirstTimeHint'
 
 interface Stats {
   totalGames: number
@@ -26,6 +27,13 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-8">
+      {/* First Time User Welcome */}
+      <FirstTimeHint id="welcome" title="Welcome to Roblox Research Tool">
+        This tool helps you find <strong>proven game ideas</strong> by analyzing what&apos;s
+        actually working on Roblox right now. Start by discovering trending games, then
+        analyze their patterns to build something similar but better.
+      </FirstTimeHint>
+
       {/* Hero - Simple and Clear */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold">Find Your Next Game</h1>

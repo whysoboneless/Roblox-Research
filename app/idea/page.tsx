@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import WorkflowGuide from '@/components/WorkflowGuide'
+import FirstTimeHint from '@/components/FirstTimeHint'
 
 interface AIGamePlan {
   score: number
@@ -415,6 +417,16 @@ export default function IdeaPage() {
   if (mode === 'choose' && !result) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
+        {/* Workflow Progress */}
+        <WorkflowGuide />
+
+        {/* First Time Hint */}
+        <FirstTimeHint id="idea-intro" title="Which path is right for you?">
+          <strong>New to this?</strong> Start with &quot;Proven Formula&quot; - it uses patterns from games
+          that are already working. <strong>Have research?</strong> Try &quot;Hybrid Formula&quot; to mix
+          mechanics. <strong>Got your own idea?</strong> Use &quot;From Scratch&quot; for AI validation.
+        </FirstTimeHint>
+
         <div>
           <h1 className="text-3xl font-bold">Create & Validate</h1>
           <p className="text-gray-400 mt-1">Build a game concept backed by real market data</p>
@@ -432,7 +444,7 @@ export default function IdeaPage() {
               Pick a validated niche from your research, then add your unique twist
             </p>
             <div className="mt-4 text-green-400 text-sm font-medium">
-              Recommended →
+              Best for beginners →
             </div>
           </button>
 
