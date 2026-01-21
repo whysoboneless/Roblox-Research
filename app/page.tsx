@@ -7,19 +7,11 @@ interface Stats {
   totalGames: number
   totalGroups: number
   qualifiedGroups: number
-  totalMetricSnapshots: number
   emergingStarsCount: number
-}
-
-interface EmergingStar {
-  name: string
-  placeId: number
-  ccu: number
 }
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
-  const [emergingStars, setEmergingStars] = useState<EmergingStar[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,7 +19,6 @@ export default function Dashboard() {
       .then(res => res.json())
       .then(data => {
         setStats(data.stats)
-        setEmergingStars(data.emergingStars || [])
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -35,174 +26,119 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Roblox Game Research</h1>
-        <p className="text-gray-400 mt-1">Find winning niches using the Nicole Search methodology</p>
+      {/* Hero Section */}
+      <div className="text-center py-8">
+        <h1 className="text-4xl font-bold mb-3">Roblox Game Research</h1>
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          Find winning niches using the Nicole Search methodology. Discover emerging games, analyze competitors, and build your strategy.
+        </p>
       </div>
 
-      {/* Main Action Cards - The Two Paths */}
+      {/* Main CTA Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Path 1: Have an idea */}
-        <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/20 border border-purple-700/50 rounded-xl p-6">
-          <div className="text-4xl mb-4">💡</div>
+        {/* Have an Idea */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-2xl p-8 hover:border-gray-700 transition-colors">
+          <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-5">
+            <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
           <h2 className="text-2xl font-bold mb-2">I Have a Game Idea</h2>
-          <p className="text-gray-300 mb-6">Validate your concept against market data and qualification criteria</p>
+          <p className="text-gray-400 mb-6">Validate your concept and get a complete game plan based on proven patterns</p>
           <div className="space-y-3">
-            <Link href="/idea" className="block w-full p-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-center font-semibold transition-colors">
-              Qualify My Idea →
+            <Link href="/idea" className="block w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-xl text-center font-semibold transition-colors">
+              Qualify My Idea
             </Link>
-            <Link href="/analyze" className="block w-full p-4 bg-purple-900/50 hover:bg-purple-800/50 border border-purple-600/50 rounded-lg text-center font-medium transition-colors">
+            <Link href="/analyze" className="block w-full py-3 bg-[#1a1a1a] hover:bg-[#222] border border-gray-800 rounded-xl text-center font-medium transition-colors">
               Analyze Competitors
             </Link>
           </div>
         </div>
 
-        {/* Path 2: Need an idea */}
-        <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/50 rounded-xl p-6">
-          <div className="text-4xl mb-4">🔍</div>
+        {/* Need Inspiration */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-2xl p-8 hover:border-gray-700 transition-colors">
+          <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-5">
+            <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <h2 className="text-2xl font-bold mb-2">I Need Inspiration</h2>
-          <p className="text-gray-300 mb-6">Discover trending games and get help brainstorming winning concepts</p>
+          <p className="text-gray-400 mb-6">Discover trending games and get help brainstorming winning concepts</p>
           <div className="space-y-3">
-            <Link href="/helper" className="block w-full p-4 bg-blue-600 hover:bg-blue-500 rounded-lg text-center font-semibold transition-colors">
-              Idea Helper →
+            <Link href="/helper" className="block w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-center font-semibold transition-colors">
+              Idea Helper
             </Link>
-            <Link href="/discover" className="block w-full p-4 bg-blue-900/50 hover:bg-blue-800/50 border border-blue-600/50 rounded-lg text-center font-medium transition-colors">
-              Discover Trending Games
+            <Link href="/discover" className="block w-full py-3 bg-[#1a1a1a] hover:bg-[#222] border border-gray-800 rounded-xl text-center font-medium transition-colors">
+              Discover Games
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Games Tracked"
-          value={loading ? '...' : stats?.totalGames || 0}
-          icon="🎮"
-        />
-        <StatCard
-          label="Competitor Groups"
-          value={loading ? '...' : stats?.totalGroups || 0}
-          icon="📊"
-        />
-        <StatCard
-          label="Qualified Niches"
-          value={loading ? '...' : stats?.qualifiedGroups || 0}
-          icon="✅"
-          highlight
-        />
-        <StatCard
-          label="Emerging Stars"
-          value={loading ? '...' : stats?.emergingStarsCount || 0}
-          icon="⭐"
-        />
+        <StatCard label="Games Tracked" value={loading ? '-' : stats?.totalGames || 0} />
+        <StatCard label="Competitor Groups" value={loading ? '-' : stats?.totalGroups || 0} />
+        <StatCard label="Qualified Niches" value={loading ? '-' : stats?.qualifiedGroups || 0} highlight />
+        <StatCard label="Emerging Stars" value={loading ? '-' : stats?.emergingStarsCount || 0} />
       </div>
 
-      {/* Quick Tools */}
+      {/* Quick Access */}
       <div>
-        <h2 className="text-xl font-bold mb-4">Quick Tools</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/discover" className="block p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-red-500/50 transition-all group">
-            <div className="text-2xl mb-2">🔥</div>
-            <h3 className="font-bold group-hover:text-red-400 transition-colors">Discover</h3>
-            <p className="text-gray-500 text-sm">Find trending games</p>
-          </Link>
-
-          <Link href="/analyze" className="block p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-orange-500/50 transition-all group">
-            <div className="text-2xl mb-2">📊</div>
-            <h3 className="font-bold group-hover:text-orange-400 transition-colors">Analyze</h3>
-            <p className="text-gray-500 text-sm">Check competitor groups</p>
-          </Link>
-
-          <Link href="/patterns" className="block p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-yellow-500/50 transition-all group">
-            <div className="text-2xl mb-2">📚</div>
-            <h3 className="font-bold group-hover:text-yellow-400 transition-colors">Patterns</h3>
-            <p className="text-gray-500 text-sm">Proven game formulas</p>
-          </Link>
-
-          <Link href="/groups" className="block p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-green-500/50 transition-all group">
-            <div className="text-2xl mb-2">📁</div>
-            <h3 className="font-bold group-hover:text-green-400 transition-colors">Groups</h3>
-            <p className="text-gray-500 text-sm">Saved research</p>
-          </Link>
+        <h2 className="text-lg font-semibold mb-4 text-gray-300">Quick Access</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickLink href="/discover" title="Discover" desc="Find trending games" />
+          <QuickLink href="/analyze" title="Analyze" desc="Check competitors" />
+          <QuickLink href="/patterns" title="Patterns" desc="Proven formulas" />
+          <QuickLink href="/groups" title="Groups" desc="Saved research" />
         </div>
       </div>
 
-      {/* Emerging Stars */}
-      {emergingStars.length > 0 && (
-        <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold">Emerging Stars</h2>
-              <p className="text-gray-400 text-sm">Recent games with strong metrics - potential opportunities</p>
-            </div>
-            <Link href="/discover" className="text-sm text-red-400 hover:text-red-300">
-              View All →
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {emergingStars.slice(0, 5).map((star) => (
-              <div key={star.placeId} className="flex items-center justify-between p-3 bg-[#111] rounded-lg">
-                <div>
-                  <span className="font-medium">{star.name}</span>
-                  <span className="text-gray-500 text-sm ml-2">ID: {star.placeId}</span>
-                </div>
-                <div className="text-green-400 font-mono">
-                  {star.ccu.toLocaleString()} CCU
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Nicole Search Method */}
-      <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-800/50 rounded-xl p-6">
-        <h2 className="text-xl font-bold mb-2">The Nicole Search Method</h2>
-        <p className="text-gray-400 text-sm mb-4">How to find profitable game opportunities on Roblox</p>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-          <div className="p-4 bg-black/30 rounded-lg border-l-4 border-red-500">
-            <div className="text-xs font-bold text-red-400 mb-2">STEP 1</div>
-            <h3 className="font-bold mb-1">Find Recent Hits</h3>
-            <p className="text-gray-400">Games &lt;6 months old gaining traction</p>
-          </div>
-          <div className="p-4 bg-black/30 rounded-lg border-l-4 border-orange-500">
-            <div className="text-xs font-bold text-orange-400 mb-2">STEP 2</div>
-            <h3 className="font-bold mb-1">Validate Revenue</h3>
-            <p className="text-gray-400">Confirm $10k+/month estimated revenue</p>
-          </div>
-          <div className="p-4 bg-black/30 rounded-lg border-l-4 border-yellow-500">
-            <div className="text-xs font-bold text-yellow-400 mb-2">STEP 3</div>
-            <h3 className="font-bold mb-1">Find 2-3 Winners</h3>
-            <p className="text-gray-400">Multiple recent successes = proven demand</p>
-          </div>
-          <div className="p-4 bg-black/30 rounded-lg border-l-4 border-green-500">
-            <div className="text-xs font-bold text-green-400 mb-2">STEP 4</div>
-            <h3 className="font-bold mb-1">Build 20% Better</h3>
-            <p className="text-gray-400">Add your unique twist to capture share</p>
-          </div>
+      {/* Method Explainer */}
+      <div className="bg-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
+        <h2 className="text-lg font-semibold mb-2">The Nicole Search Method</h2>
+        <p className="text-gray-500 text-sm mb-5">How to find profitable game opportunities on Roblox</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <StepCard num="1" title="Find Recent Hits" desc="Games <6 months old gaining traction" color="red" />
+          <StepCard num="2" title="Validate Revenue" desc="Confirm $10k+/month estimated" color="orange" />
+          <StepCard num="3" title="Find 2-3 Winners" desc="Multiple successes = proven demand" color="yellow" />
+          <StepCard num="4" title="Build 20% Better" desc="Add your unique twist" color="green" />
         </div>
       </div>
     </div>
   )
 }
 
-function StatCard({ label, value, icon, highlight = false }: {
-  label: string
-  value: number | string
-  icon: string
-  highlight?: boolean
-}) {
+function StatCard({ label, value, highlight = false }: { label: string; value: number | string; highlight?: boolean }) {
   return (
-    <div className={`p-5 rounded-xl ${highlight ? 'bg-green-900/20 border border-green-800' : 'bg-[#1a1a1a] border border-gray-800'}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-2xl">{icon}</span>
-        <span className={`text-2xl font-bold ${highlight ? 'text-green-400' : ''}`}>
-          {value}
-        </span>
-      </div>
-      <p className="text-gray-400 mt-2 text-sm">{label}</p>
+    <div className={`p-5 rounded-xl ${highlight ? 'bg-green-950/30 border border-green-900/50' : 'bg-[#0f0f0f] border border-gray-800'}`}>
+      <div className={`text-3xl font-bold mb-1 ${highlight ? 'text-green-400' : 'text-white'}`}>{value}</div>
+      <div className="text-gray-500 text-sm">{label}</div>
+    </div>
+  )
+}
+
+function QuickLink({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link href={href} className="block p-4 bg-[#0f0f0f] border border-gray-800 rounded-xl hover:border-gray-700 transition-colors group">
+      <div className="font-semibold group-hover:text-white transition-colors">{title}</div>
+      <div className="text-gray-500 text-sm">{desc}</div>
+    </Link>
+  )
+}
+
+function StepCard({ num, title, desc, color }: { num: string; title: string; desc: string; color: string }) {
+  const colors: Record<string, string> = {
+    red: 'border-l-red-500 text-red-400',
+    orange: 'border-l-orange-500 text-orange-400',
+    yellow: 'border-l-yellow-500 text-yellow-400',
+    green: 'border-l-green-500 text-green-400',
+  }
+  return (
+    <div className={`p-4 bg-[#0a0a0a] rounded-lg border-l-4 ${colors[color]}`}>
+      <div className={`text-xs font-bold mb-1 ${colors[color].split(' ')[1]}`}>STEP {num}</div>
+      <div className="font-semibold text-sm mb-1">{title}</div>
+      <div className="text-gray-500 text-xs">{desc}</div>
     </div>
   )
 }

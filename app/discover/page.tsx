@@ -18,6 +18,111 @@ interface Game {
   dates: { created: string }
 }
 
+// Pattern detection based on game name/genre keywords
+const PATTERN_KEYWORDS: Record<string, { keywords: string[]; pattern: string; color: string }> = {
+  'anime-td': {
+    keywords: ['anime', 'tower defense', 'defenders', 'adventures'],
+    pattern: 'Anime TD',
+    color: 'text-purple-400 bg-purple-500/20'
+  },
+  'simulator': {
+    keywords: ['simulator', 'sim', 'clicker', 'legends'],
+    pattern: 'Simulator',
+    color: 'text-blue-400 bg-blue-500/20'
+  },
+  'pet': {
+    keywords: ['pet', 'egg', 'hatch'],
+    pattern: 'Pet Sim',
+    color: 'text-pink-400 bg-pink-500/20'
+  },
+  'horror': {
+    keywords: ['doors', 'horror', 'scary', 'mimic', 'backrooms'],
+    pattern: 'Horror',
+    color: 'text-red-400 bg-red-500/20'
+  },
+  'tycoon': {
+    keywords: ['tycoon', 'restaurant', 'retail', 'factory'],
+    pattern: 'Tycoon',
+    color: 'text-yellow-400 bg-yellow-500/20'
+  },
+  'roleplay': {
+    keywords: ['brookhaven', 'bloxburg', 'roleplay', 'rp', 'avenue'],
+    pattern: 'Roleplay',
+    color: 'text-green-400 bg-green-500/20'
+  },
+  'fighting': {
+    keywords: ['fruits', 'fighting', 'combat', 'legacy', 'piece', 'arsenal'],
+    pattern: 'Combat',
+    color: 'text-orange-400 bg-orange-500/20'
+  },
+  'obby': {
+    keywords: ['obby', 'tower of', 'obstacle'],
+    pattern: 'Obby',
+    color: 'text-cyan-400 bg-cyan-500/20'
+  }
+}
+
+function detectPattern(game: Game): { pattern: string; color: string } | null {
+  const searchText = `${game.name} ${game.genre || ''}`.toLowerCase()
+
+  for (const [, data] of Object.entries(PATTERN_KEYWORDS)) {
+    for (const keyword of data.keywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        return { pattern: data.pattern, color: data.color }
+      }
+    }
+  }
+  return null
+}
+
+// Pattern strategies for reverse engineering
+const PATTERN_STRATEGIES: Record<string, {
+  retention: string[]
+  monetization: string[]
+  viral: string[]
+}> = {
+  'Anime TD': {
+    retention: ['Gacha/summon system', 'Character collection', 'Co-op multiplayer', 'Meta progression'],
+    monetization: ['Premium currency', 'Battle passes', 'Limited banners', 'VIP servers'],
+    viral: ['Trading communities', 'Tier lists', 'Update hype', 'YouTuber summons']
+  },
+  'Simulator': {
+    retention: ['Rebirth system', 'Automation unlocks', 'Leaderboards', 'Daily rewards'],
+    monetization: ['x2 earnings pass', 'Auto-collect', 'Premium areas', 'Exclusive tools'],
+    viral: ['Big numbers', 'Speedrun prestige', 'Leaderboard competition']
+  },
+  'Pet Sim': {
+    retention: ['Pet collection', 'Egg hatching', 'Fusion system', 'Trading', 'Events'],
+    monetization: ['Luck boosts', 'Premium eggs', 'VIP areas', 'Event passes'],
+    viral: ['Rare pet flexing', 'Giveaways', 'Egg opening videos']
+  },
+  'Horror': {
+    retention: ['Procedural elements', 'Lore discovery', 'Challenge modes', 'Unlockables'],
+    monetization: ['Cosmetics', 'Revives', 'Hint systems', 'Story DLC'],
+    viral: ['Jump scare clips', 'Lore theories', 'Speedruns']
+  },
+  'Tycoon': {
+    retention: ['Prestige system', 'Automation', 'Leaderboards', 'Daily rewards'],
+    monetization: ['x2 earnings', 'Auto-collect', 'Premium areas'],
+    viral: ['Building showcases', 'Speedrun prestige']
+  },
+  'Roleplay': {
+    retention: ['House building', 'Vehicle collection', 'Friend systems', 'Seasonal updates'],
+    monetization: ['Premium currency', 'House packs', 'Vehicles', 'Clothing'],
+    viral: ['RP content', 'Building showcases', 'Drama clips']
+  },
+  'Combat': {
+    retention: ['Ability unlocks', 'Rare items', 'PvP ranking', 'Boss fights'],
+    monetization: ['Rerolls', 'XP boosts', 'Private servers'],
+    viral: ['PvP montages', 'Rare drops', 'Update trailers']
+  },
+  'Obby': {
+    retention: ['Stage progression', 'Time challenges', 'Cosmetics', 'Leaderboards'],
+    monetization: ['Skip stage', 'Cosmetics', 'Checkpoint saves'],
+    viral: ['Speedruns', 'Fail compilations']
+  }
+}
+
 const CATEGORIES = [
   { id: 'popular', label: 'Popular' },
   { id: 'simulator', label: 'Simulators' },
@@ -33,9 +138,9 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('popular')
   const [selectedGames, setSelectedGames] = useState<string[]>([])
+  const [expandedGame, setExpandedGame] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Load games on mount and when category changes
   useEffect(() => {
     loadGames(selectedCategory)
   }, [selectedCategory])
@@ -43,39 +148,28 @@ export default function DiscoverPage() {
   const loadGames = async (category: string) => {
     setLoading(true)
     setError(null)
+    setExpandedGame(null)
 
     try {
       const res = await fetch(`/api/discover?query=${encodeURIComponent(category)}&limit=12`)
-
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`)
-      }
-
+      if (!res.ok) throw new Error(`API error: ${res.status}`)
       const data = await res.json()
-
-      if (data.error) {
-        throw new Error(data.error)
-      }
-
+      if (data.error) throw new Error(data.error)
       setGames(data.games || [])
-
-      if (!data.games || data.games.length === 0) {
-        setError('No games found. Try a different category.')
-      }
-    } catch (err: any) {
-      console.error('Load failed:', err)
-      setError(err.message || 'Failed to load games')
+      if (!data.games || data.games.length === 0) setError('No games found.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load'
+      setError(message)
       setGames([])
     } finally {
       setLoading(false)
     }
   }
 
-  const toggleSelect = (placeId: string) => {
+  const toggleSelect = (placeId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedGames(prev =>
-      prev.includes(placeId)
-        ? prev.filter(id => id !== placeId)
-        : [...prev, placeId]
+      prev.includes(placeId) ? prev.filter(id => id !== placeId) : [...prev, placeId]
     )
   }
 
@@ -87,19 +181,19 @@ export default function DiscoverPage() {
   }
 
   const formatRevenue = (rev: number): string => {
-    if (rev >= 1_000_000) return '$' + (rev / 1_000_000).toFixed(1) + 'M'
-    if (rev >= 1_000) return '$' + (rev / 1_000).toFixed(0) + 'K'
-    return '$' + rev
+    if (rev >= 1_000_000) return '$' + (rev / 1_000_000).toFixed(1) + 'M/mo'
+    if (rev >= 1_000) return '$' + (rev / 1_000).toFixed(0) + 'K/mo'
+    return '$' + rev + '/mo'
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Discover Games</h1>
-        <p className="text-gray-400 mt-1">Browse popular Roblox games by category</p>
+        <p className="text-gray-400 mt-1">Browse games and reverse-engineer their strategies</p>
       </div>
 
-      {/* Category Tabs */}
+      {/* Categories */}
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map((cat) => (
           <button
@@ -108,8 +202,8 @@ export default function DiscoverPage() {
             disabled={loading}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedCategory === cat.id
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+                ? 'bg-white text-black'
+                : 'bg-[#1a1a1a] text-gray-400 hover:text-white hover:bg-[#222]'
             }`}
           >
             {cat.label}
@@ -117,23 +211,20 @@ export default function DiscoverPage() {
         ))}
       </div>
 
-      {/* Loading State */}
+      {/* Loading */}
       {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-red-500"></div>
-          <p className="text-gray-400 mt-4">Loading {selectedCategory} games...</p>
+        <div className="text-center py-16">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-700 border-t-white"></div>
+          <p className="text-gray-500 mt-4">Loading games...</p>
         </div>
       )}
 
-      {/* Error State */}
+      {/* Error */}
       {error && !loading && (
-        <div className="bg-red-900/20 border border-red-800 rounded-xl p-6 text-center">
+        <div className="bg-red-950/30 border border-red-900/50 rounded-xl p-6 text-center">
           <p className="text-red-400">{error}</p>
-          <button
-            onClick={() => loadGames(selectedCategory)}
-            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm"
-          >
-            Try Again
+          <button onClick={() => loadGames(selectedCategory)} className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm">
+            Retry
           </button>
         </div>
       )}
@@ -142,21 +233,20 @@ export default function DiscoverPage() {
       {!loading && games.length > 0 && (
         <>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400 text-sm">{games.length} games found</span>
+            <span className="text-gray-500 text-sm">{games.length} games</span>
             {selectedGames.length > 0 && (
-              <Link
-                href={`/analyze?ids=${selectedGames.join(',')}`}
-                className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-medium text-sm transition-colors"
-              >
+              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium">
                 Analyze {selectedGames.length} Selected
               </Link>
             )}
           </div>
 
-          {/* Games Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {games.map((game) => {
               const isSelected = selectedGames.includes(game.placeId)
+              const isExpanded = expandedGame === game.placeId
+              const detectedPattern = detectPattern(game)
+              const strategies = detectedPattern ? PATTERN_STRATEGIES[detectedPattern.pattern] : null
               const ccu = game.metrics?.currentPlayers || 0
               const visits = game.metrics?.visits || 0
               const likeRatio = game.metrics?.likeRatio || '0'
@@ -165,53 +255,96 @@ export default function DiscoverPage() {
               return (
                 <div
                   key={game.placeId}
-                  onClick={() => toggleSelect(game.placeId)}
-                  className={`p-4 rounded-xl cursor-pointer transition-all ${
-                    isSelected
-                      ? 'bg-red-900/30 border-2 border-red-600'
-                      : 'bg-gray-900 border border-gray-800 hover:border-gray-600'
-                  }`}
+                  className={`rounded-xl overflow-hidden transition-all ${
+                    isSelected ? 'ring-2 ring-white' : ''
+                  } ${isExpanded ? 'bg-[#111]' : 'bg-[#0f0f0f]'} border border-gray-800 hover:border-gray-700`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h3 className="font-bold truncate">{game.name}</h3>
-                      <p className="text-gray-500 text-sm">by {game.creator?.name || 'Unknown'}</p>
+                  {/* Main Card */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h3 className="font-bold truncate">{game.name}</h3>
+                        <p className="text-gray-500 text-sm">by {game.creator?.name || 'Unknown'}</p>
+                      </div>
+                      <button
+                        onClick={(e) => toggleSelect(game.placeId, e)}
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isSelected ? 'bg-white border-white text-black' : 'border-gray-600 hover:border-gray-400'
+                        }`}
+                      >
+                        {isSelected && <span className="text-xs">✓</span>}
+                      </button>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => {}}
-                      className="w-5 h-5 accent-red-500 mt-1 flex-shrink-0"
-                    />
+
+                    {/* Pattern Badge */}
+                    {detectedPattern && (
+                      <div className={`inline-block px-2 py-1 rounded text-xs font-medium mb-3 ${detectedPattern.color}`}>
+                        {detectedPattern.pattern} Pattern
+                      </div>
+                    )}
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-gray-500 text-xs">CCU</div>
+                        <div className="text-green-400 font-mono font-bold">{formatNumber(ccu)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 text-xs">Visits</div>
+                        <div className="font-mono">{formatNumber(visits)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 text-xs">Rating</div>
+                        <div className={parseFloat(likeRatio) >= 80 ? 'text-green-400' : parseFloat(likeRatio) >= 60 ? 'text-yellow-400' : 'text-red-400'}>
+                          {likeRatio}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 text-xs">Est. Revenue</div>
+                        <div className="text-yellow-400 font-mono">{formatRevenue(revenue)}</div>
+                      </div>
+                    </div>
+
+                    {/* Expand Button */}
+                    {detectedPattern && (
+                      <button
+                        onClick={() => setExpandedGame(isExpanded ? null : game.placeId)}
+                        className="w-full mt-4 py-2 text-sm text-gray-400 hover:text-white border-t border-gray-800 transition-colors"
+                      >
+                        {isExpanded ? 'Hide Strategy' : 'View Strategy →'}
+                      </button>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-gray-500 block">CCU</span>
-                      <p className="text-green-400 font-mono font-bold">
-                        {formatNumber(ccu)}
-                      </p>
+                  {/* Expanded Strategy Section */}
+                  {isExpanded && strategies && (
+                    <div className="px-4 pb-4 space-y-4 border-t border-gray-800 pt-4">
+                      <div>
+                        <div className="text-xs font-bold text-green-400 mb-2">RETENTION</div>
+                        <div className="flex flex-wrap gap-1">
+                          {strategies.retention.map((r, i) => (
+                            <span key={i} className="px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs">{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-yellow-400 mb-2">MONETIZATION</div>
+                        <div className="flex flex-wrap gap-1">
+                          {strategies.monetization.map((m, i) => (
+                            <span key={i} className="px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded text-xs">{m}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-blue-400 mb-2">VIRAL HOOKS</div>
+                        <div className="flex flex-wrap gap-1">
+                          {strategies.viral.map((v, i) => (
+                            <span key={i} className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs">{v}</span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block">Visits</span>
-                      <p className="font-mono">{formatNumber(visits)}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Rating</span>
-                      <p className={parseFloat(likeRatio) >= 80 ? 'text-green-400' : parseFloat(likeRatio) >= 60 ? 'text-yellow-400' : 'text-red-400'}>
-                        {likeRatio}%
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block">Est. Rev/mo</span>
-                      <p className="text-yellow-400 font-mono">{formatRevenue(revenue)}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-800 flex justify-between text-xs text-gray-500">
-                    <span>{game.genre || 'Game'}</span>
-                    <span>ID: {game.placeId}</span>
-                  </div>
+                  )}
                 </div>
               )
             })}
@@ -219,31 +352,14 @@ export default function DiscoverPage() {
         </>
       )}
 
-      {/* Empty State (no error) */}
-      {!loading && !error && games.length === 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-          <p className="text-gray-400">Select a category above to browse games</p>
-        </div>
-      )}
-
       {/* Selection Footer */}
       {selectedGames.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-gray-800 p-4">
           <div className="container mx-auto flex items-center justify-between">
-            <span className="text-gray-400">
-              {selectedGames.length} game{selectedGames.length > 1 ? 's' : ''} selected
-            </span>
+            <span className="text-gray-400">{selectedGames.length} selected</span>
             <div className="flex gap-3">
-              <button
-                onClick={() => setSelectedGames([])}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-              >
-                Clear
-              </button>
-              <Link
-                href={`/analyze?ids=${selectedGames.join(',')}`}
-                className="px-6 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition-colors"
-              >
+              <button onClick={() => setSelectedGames([])} className="px-4 py-2 text-gray-400 hover:text-white">Clear</button>
+              <Link href={`/analyze?ids=${selectedGames.join(',')}`} className="px-6 py-2 bg-white text-black rounded-lg font-medium">
                 Analyze Selected
               </Link>
             </div>
