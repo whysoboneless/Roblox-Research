@@ -7,7 +7,8 @@ const navItems = [
   { href: '/', label: 'Dashboard' },
   { href: '/discover', label: 'Discover' },
   { href: '/analyze', label: 'Analyze' },
-  { href: '/groups', label: 'Groups' },
+  { href: '/idea', label: 'Qualify Idea' },
+  { href: '/helper', label: 'Idea Helper' },
   { href: '/patterns', label: 'Patterns' },
 ]
 
