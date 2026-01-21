@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 interface Game {
@@ -55,7 +55,7 @@ interface Analysis {
   recommendations: string[]
 }
 
-export default function AnalyzePage() {
+function AnalyzeContent() {
   const searchParams = useSearchParams()
   const [placeIds, setPlaceIds] = useState('')
   const [loading, setLoading] = useState(false)
@@ -295,5 +295,13 @@ export default function AnalyzePage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function AnalyzePage() {
+  return (
+    <Suspense fallback={<div className="text-gray-400">Loading...</div>}>
+      <AnalyzeContent />
+    </Suspense>
   )
 }

@@ -137,9 +137,11 @@ export async function GET(request: Request) {
       getGameVotes(universeIds)
     ])
 
-    // Create a map for quick lookup
+    // Create a map for quick lookup - using any type for API responses
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const detailsMap = new Map<number, any>(details.map((d: any) => [d.id, d]))
-    const votesMap = new Map<number, { upVotes: number; downVotes: number }>(votes.map((v: any) => [v.id, v]))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const votesMap = new Map<number, any>(votes.map((v: any) => [v.id, v]))
 
     // Build enriched game list
     const games = await Promise.all(
