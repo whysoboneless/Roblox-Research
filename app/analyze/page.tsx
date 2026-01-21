@@ -45,9 +45,12 @@ function AnalyzeContent() {
   const searchParams = useSearchParams()
   const [placeIds, setPlaceIds] = useState('')
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [games, setGames] = useState<Game[]>([])
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [error, setError] = useState('')
+  const [groupName, setGroupName] = useState('')
 
   useEffect(() => {
     const ids = searchParams.get('ids')
@@ -96,6 +99,36 @@ function AnalyzeContent() {
       setError(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveGroup = async () => {
+    if (!analysis || games.length === 0) return
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/save-group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          games,
+          analysis,
+          groupName: groupName || analysis.groupName
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save group')
+      }
+
+      setSaved(true)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save'
+      setError(message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -153,6 +186,33 @@ function AnalyzeContent() {
                 <div className="text-4xl font-bold">{analysis.score}</div>
                 <div className="text-gray-400 text-sm">/ 100</div>
               </div>
+            </div>
+
+            {/* Save Group Section */}
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              {saved ? (
+                <div className="flex items-center gap-2 text-green-400">
+                  <span>✓</span>
+                  <span>Saved to your research library with extracted patterns</span>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder={analysis.groupName || 'Enter group name...'}
+                    className="flex-1 bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
+                  />
+                  <button
+                    onClick={handleSaveGroup}
+                    disabled={saving}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors whitespace-nowrap"
+                  >
+                    {saving ? 'Saving...' : 'Save to Research Library'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation'
 
 const navItems = [
   { href: '/', label: 'Dashboard' },
-  { href: '/emerging', label: 'Emerging Stars' },
-  { href: '/discover', label: 'Discover' },
+  { href: '/niches', label: 'Hot Niches' },
+  { href: '/emerging', label: 'Emerging' },
   { href: '/analyze', label: 'Analyze' },
-  { href: '/idea', label: 'Qualify Idea' },
+  { href: '/idea', label: 'Idea Lab' },
   { href: '/groups', label: 'Groups' },
   { href: '/patterns', label: 'Patterns' },
 ]

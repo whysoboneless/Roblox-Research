@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 interface AIGamePlan {
   score: number
@@ -16,6 +17,19 @@ interface AIGamePlan {
   uniqueAdvice: string
 }
 
+interface ProvenFormula {
+  template: string
+  theme: string
+  coreLoop: string
+  description: string
+  avgRevenue: number
+  emergingCount: number
+  mechanics: string[]
+  monetization: string[]
+  retention: string[]
+  exampleGames: string[]
+}
+
 const GAME_TEMPLATES = [
   { id: 'simulator', label: 'Simulator', desc: 'Click/collect/upgrade loops' },
   { id: 'tower-defense', label: 'Tower Defense', desc: 'Place units, defend waves' },
@@ -29,7 +43,7 @@ const GAME_TEMPLATES = [
 
 const THEMES = [
   'Anime', 'Pets', 'Fantasy', 'Sci-Fi', 'Horror', 'Military',
-  'Sports', 'Food', 'Nature', 'Superhero', 'Pirates', 'Zombies', 'Other'
+  'Sports', 'Food', 'Nature', 'Superhero', 'Pirates', 'Zombies', 'Meme/Brainrot', 'Other'
 ]
 
 const MONETIZATION = [
@@ -42,6 +56,7 @@ const MONETIZATION = [
 ]
 
 export default function IdeaPage() {
+  const [mode, setMode] = useState<'choose' | 'scratch' | 'formula'>('choose')
   const [step, setStep] = useState(1)
   const [idea, setIdea] = useState({
     name: '',
@@ -56,6 +71,62 @@ export default function IdeaPage() {
   const [helpingLoop, setHelpingLoop] = useState(false)
   const [loopSuggestion, setLoopSuggestion] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // For formula mode
+  const [hotFormulas, setHotFormulas] = useState<ProvenFormula[]>([])
+  const [loadingFormulas, setLoadingFormulas] = useState(false)
+  const [selectedFormula, setSelectedFormula] = useState<ProvenFormula | null>(null)
+
+  // Load hot formulas from auto-cluster
+  const loadHotFormulas = async () => {
+    setLoadingFormulas(true)
+    try {
+      const res = await fetch('/api/auto-cluster?maxMonths=6&minCcu=100')
+      const data = await res.json()
+
+      if (data.hotNiches && data.hotNiches.length > 0) {
+        // Convert clusters to formulas
+        const formulas: ProvenFormula[] = data.hotNiches.map((cluster: any) => ({
+          template: cluster.template,
+          theme: cluster.theme,
+          coreLoop: getCoreLoop(cluster.template),
+          description: getDescription(cluster.template, cluster.theme),
+          avgRevenue: cluster.avgRevenue,
+          emergingCount: cluster.qualifiedCount,
+          mechanics: getMechanics(cluster.template),
+          monetization: getMonetization(cluster.template),
+          retention: getRetention(cluster.template),
+          exampleGames: cluster.emergingStars.slice(0, 3).map((s: any) => s.name)
+        }))
+        setHotFormulas(formulas)
+      }
+    } catch (err) {
+      console.error('Failed to load formulas:', err)
+    } finally {
+      setLoadingFormulas(false)
+    }
+  }
+
+  // When entering formula mode, load hot formulas
+  useEffect(() => {
+    if (mode === 'formula' && hotFormulas.length === 0) {
+      loadHotFormulas()
+    }
+  }, [mode])
+
+  // Select a formula and pre-fill
+  const selectFormula = (formula: ProvenFormula) => {
+    setSelectedFormula(formula)
+    setIdea({
+      name: '',
+      template: formula.template.toLowerCase().replace(' ', '-'),
+      theme: formula.theme,
+      coreLoop: formula.coreLoop,
+      monetization: [],
+      uniqueHook: '',
+    })
+    setStep(2) // Jump to the twist step
+  }
 
   // AI: Help articulate the core loop
   const helpWithLoop = async () => {
@@ -99,7 +170,10 @@ export default function IdeaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'qualify-idea',
-          data: idea
+          data: {
+            ...idea,
+            baseFormula: selectedFormula ? `${selectedFormula.theme} ${selectedFormula.template}` : null
+          }
         })
       })
 
@@ -122,29 +196,324 @@ export default function IdeaPage() {
   const reset = () => {
     setResult(null)
     setStep(1)
+    setMode('choose')
+    setSelectedFormula(null)
     setIdea({ name: '', template: '', theme: '', coreLoop: '', monetization: [], uniqueHook: '' })
     setLoopSuggestion(null)
     setError(null)
   }
 
+  // Mode Selection
+  if (mode === 'choose' && !result) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Idea Lab</div>
+          <h1 className="text-3xl font-bold">Create Your Game Concept</h1>
+          <p className="text-gray-400 mt-1">Choose how you want to start</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Start from Proven Formula */}
+          <button
+            onClick={() => setMode('formula')}
+            className="bg-gradient-to-br from-green-900/30 to-green-800/10 border border-green-700/50 rounded-xl p-6 text-left hover:border-green-600 transition-colors"
+          >
+            <div className="text-2xl mb-2">🔥</div>
+            <h3 className="text-xl font-bold">Start from Proven Formula</h3>
+            <p className="text-gray-400 mt-2 text-sm">
+              Pick a validated niche with 2+ recent successes, then add your unique twist
+            </p>
+            <div className="mt-4 text-green-400 text-sm font-medium">
+              Recommended for beginners →
+            </div>
+          </button>
+
+          {/* Start from Scratch */}
+          <button
+            onClick={() => setMode('scratch')}
+            className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 text-left hover:border-gray-700 transition-colors"
+          >
+            <div className="text-2xl mb-2">✨</div>
+            <h3 className="text-xl font-bold">Start from Scratch</h3>
+            <p className="text-gray-400 mt-2 text-sm">
+              Have your own idea? Describe it and get AI-powered validation and planning
+            </p>
+            <div className="mt-4 text-gray-500 text-sm font-medium">
+              For experienced creators →
+            </div>
+          </button>
+        </div>
+
+        {/* Quick Links */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
+          <h3 className="font-bold mb-3">Need Inspiration?</h3>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/niches" className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium">
+              Browse Hot Niches
+            </Link>
+            <Link href="/emerging" className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#222] rounded-lg text-sm">
+              See Emerging Games
+            </Link>
+            <Link href="/patterns" className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#222] rounded-lg text-sm">
+              Study Proven Patterns
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Formula Selection Mode
+  if (mode === 'formula' && step === 1 && !result) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div>
+          <button onClick={() => setMode('choose')} className="text-gray-500 hover:text-white text-sm mb-2">
+            ← Back to options
+          </button>
+          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Step 1 of 3</div>
+          <h1 className="text-3xl font-bold">Pick a Proven Formula</h1>
+          <p className="text-gray-400 mt-1">These niches have 2+ emerging stars in the last 6 months</p>
+        </div>
+
+        {loadingFormulas ? (
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-700 border-t-green-500"></div>
+            <p className="text-gray-500 mt-4">Loading validated formulas...</p>
+          </div>
+        ) : hotFormulas.length > 0 ? (
+          <div className="space-y-4">
+            {hotFormulas.map((formula, i) => (
+              <div
+                key={i}
+                className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-5 hover:border-green-700 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold">{formula.theme} {formula.template}</h3>
+                    <p className="text-gray-400 mt-1">{formula.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-green-400 font-bold">${(formula.avgRevenue / 1000).toFixed(0)}K/mo avg</div>
+                    <div className="text-gray-500 text-sm">{formula.emergingCount} emerging stars</div>
+                  </div>
+                </div>
+
+                {/* Core Pattern */}
+                <div className="mt-4 p-3 bg-[#1a1a1a] rounded-lg">
+                  <div className="text-xs text-gray-500 mb-1">Core Loop</div>
+                  <div className="text-sm font-medium">{formula.coreLoop}</div>
+                </div>
+
+                {/* Examples */}
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-500">Examples:</span>
+                  {formula.exampleGames.map((game, j) => (
+                    <span key={j} className="px-2 py-1 bg-gray-800 rounded text-xs">{game}</span>
+                  ))}
+                </div>
+
+                {/* Select Button */}
+                <button
+                  onClick={() => selectFormula(formula)}
+                  className="mt-4 w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-medium transition-colors"
+                >
+                  Use This Formula
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 text-gray-500">
+            <p>No hot formulas found at the moment.</p>
+            <p className="text-sm mt-2">Try the manual approach or check back later.</p>
+            <button
+              onClick={() => setMode('scratch')}
+              className="mt-4 px-6 py-3 bg-white text-black rounded-xl font-semibold"
+            >
+              Start from Scratch Instead
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Formula Mode - Add Your Twist (Step 2)
+  if (mode === 'formula' && step === 2 && selectedFormula && !result) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <button onClick={() => setStep(1)} className="text-gray-500 hover:text-white text-sm mb-2">
+            ← Change formula
+          </button>
+          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Step 2 of 3</div>
+          <h1 className="text-3xl font-bold">Add Your Unique Twist</h1>
+          <p className="text-gray-400 mt-1">What makes YOUR version different?</p>
+        </div>
+
+        {/* Selected Formula Summary */}
+        <div className="bg-green-900/20 border border-green-700/50 rounded-xl p-4">
+          <div className="text-xs text-green-400 mb-1">BASE FORMULA</div>
+          <div className="font-bold text-lg">{selectedFormula.theme} {selectedFormula.template}</div>
+          <div className="text-gray-400 text-sm mt-1">{selectedFormula.coreLoop}</div>
+        </div>
+
+        {/* The Form */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-5">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Game Name</label>
+            <input
+              type="text"
+              value={idea.name}
+              onChange={(e) => setIdea(p => ({ ...p, name: e.target.value }))}
+              placeholder={`My ${selectedFormula.theme} ${selectedFormula.template}`}
+              className="w-full bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Your Unique Twist <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={idea.uniqueHook}
+              onChange={(e) => setIdea(p => ({ ...p, uniqueHook: e.target.value }))}
+              placeholder="What makes your version different? Examples:
+• Different theme combination (e.g., 'Anime + Cooking' instead of 'Anime + Fighting')
+• Unique mechanic (e.g., 'co-op boss raids' instead of solo)
+• Different target audience (e.g., 'casual players' instead of 'hardcore grinders')
+• Visual style (e.g., 'pixel art' instead of 'realistic')"
+              className="w-full h-32 bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600 resize-none"
+            />
+          </div>
+
+          {/* Built-in mechanics from formula */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Included Mechanics (from formula)</label>
+            <div className="flex flex-wrap gap-2">
+              {selectedFormula.mechanics.map((m, i) => (
+                <span key={i} className="px-3 py-1 bg-green-900/30 text-green-400 rounded-lg text-sm">{m}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Suggested monetization */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Proven Monetization (you can modify later)</label>
+            <div className="flex flex-wrap gap-2">
+              {selectedFormula.monetization.map((m, i) => (
+                <span key={i} className="px-3 py-1 bg-yellow-900/30 text-yellow-400 rounded-lg text-sm">{m}</span>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setStep(3)}
+            disabled={idea.uniqueHook.length < 20}
+            className="w-full py-3 bg-white text-black rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue to Validation
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Formula Mode - Final Review & Generate (Step 3)
+  if (mode === 'formula' && step === 3 && selectedFormula && !result) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <button onClick={() => setStep(2)} className="text-gray-500 hover:text-white text-sm mb-2">
+            ← Edit twist
+          </button>
+          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Step 3 of 3</div>
+          <h1 className="text-3xl font-bold">Review & Generate Plan</h1>
+        </div>
+
+        {/* Summary */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-4">
+          <div>
+            <div className="text-gray-500 text-sm">Game Name</div>
+            <div className="font-bold text-lg">{idea.name || `${selectedFormula.theme} ${selectedFormula.template}`}</div>
+          </div>
+
+          <div>
+            <div className="text-gray-500 text-sm">Base Formula</div>
+            <div className="font-medium">{selectedFormula.theme} {selectedFormula.template}</div>
+            <div className="text-gray-400 text-sm">{selectedFormula.coreLoop}</div>
+          </div>
+
+          <div>
+            <div className="text-gray-500 text-sm">Your Unique Twist</div>
+            <div className="text-gray-300">{idea.uniqueHook}</div>
+          </div>
+
+          <div className="pt-4 border-t border-gray-800">
+            <div className="text-gray-500 text-sm mb-2">This formula is validated by:</div>
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-400">{selectedFormula.emergingCount}</div>
+                <div className="text-xs text-gray-500">Emerging Stars</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-400">${(selectedFormula.avgRevenue / 1000).toFixed(0)}K</div>
+                <div className="text-xs text-gray-500">Avg Revenue/mo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={qualifyIdea}
+          disabled={loading}
+          className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+        >
+          {loading ? (
+            <>
+              <span className="animate-spin">⟳</span> AI Generating Your Plan...
+            </>
+          ) : (
+            <>Generate Complete Game Plan</>
+          )}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Idea Validation</div>
-        <h1 className="text-3xl font-bold">Qualify Your Game Idea</h1>
-        <p className="text-gray-400 mt-1">AI will analyze your concept and create a custom game plan</p>
-      </div>
+      {/* Header - Scratch Mode */}
+      {mode === 'scratch' && !result && (
+        <div>
+          <button onClick={() => setMode('choose')} className="text-gray-500 hover:text-white text-sm mb-2">
+            ← Back to options
+          </button>
+          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Idea Validation</div>
+          <h1 className="text-3xl font-bold">Qualify Your Game Idea</h1>
+          <p className="text-gray-400 mt-1">AI will analyze your concept and create a custom game plan</p>
+        </div>
+      )}
 
-      {/* Progress */}
-      <div className="flex gap-2">
-        {[1, 2, 3, 4].map((s) => (
-          <div key={s} className={`flex-1 h-1.5 rounded-full ${s <= step ? 'bg-white' : 'bg-gray-800'}`} />
-        ))}
-      </div>
+      {/* Progress - Scratch Mode */}
+      {mode === 'scratch' && !result && (
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className={`flex-1 h-1.5 rounded-full ${s <= step ? 'bg-white' : 'bg-gray-800'}`} />
+          ))}
+        </div>
+      )}
 
       {/* Step 1: Template */}
-      {step === 1 && !result && (
+      {mode === 'scratch' && step === 1 && !result && (
         <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold mb-2">What type of game?</h2>
           <p className="text-gray-500 text-sm mb-6">Pick the closest match to your idea</p>
@@ -177,9 +546,9 @@ export default function IdeaPage() {
       )}
 
       {/* Step 2: Theme */}
-      {step === 2 && !result && (
+      {mode === 'scratch' && step === 2 && !result && (
         <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-2">What's the theme?</h2>
+          <h2 className="text-xl font-bold mb-2">What&apos;s the theme?</h2>
           <p className="text-gray-500 text-sm mb-6">The setting or aesthetic of your game</p>
 
           <div className="flex flex-wrap gap-2">
@@ -221,10 +590,10 @@ export default function IdeaPage() {
       )}
 
       {/* Step 3: Core Loop - WITH AI HELP */}
-      {step === 3 && !result && (
+      {mode === 'scratch' && step === 3 && !result && (
         <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold mb-2">Describe your game</h2>
-          <p className="text-gray-500 text-sm mb-6">Don't worry about being perfect - AI will help you refine it</p>
+          <p className="text-gray-500 text-sm mb-6">Don&apos;t worry about being perfect - AI will help you refine it</p>
 
           <div className="space-y-4">
             <div>
@@ -299,7 +668,7 @@ export default function IdeaPage() {
       )}
 
       {/* Step 4: Monetization + Submit */}
-      {step === 4 && !result && (
+      {mode === 'scratch' && step === 4 && !result && (
         <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold mb-2">Monetization (optional)</h2>
           <p className="text-gray-500 text-sm mb-6">How do you plan to make money? Select all that apply</p>
@@ -367,6 +736,9 @@ export default function IdeaPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-bold">{idea.name || `${idea.theme} ${idea.template}`}</h2>
+                {selectedFormula && (
+                  <p className="text-gray-500 text-sm">Based on: {selectedFormula.theme} {selectedFormula.template}</p>
+                )}
                 <p className={`text-lg mt-1 ${
                   result.verdict === 'PROMISING' ? 'text-green-400' :
                   result.verdict === 'NEEDS_WORK' ? 'text-yellow-400' : 'text-red-400'
@@ -392,16 +764,9 @@ export default function IdeaPage() {
 
           {/* Game Plan Grid */}
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Core Mechanics */}
             <PlanSection title="Core Mechanics" color="green" items={result.coreMechanics} />
-
-            {/* Monetization */}
             <PlanSection title="Monetization Plan" color="yellow" items={result.monetizationPlan} />
-
-            {/* Retention */}
             <PlanSection title="Retention Hooks" color="blue" items={result.retentionHooks} />
-
-            {/* Viral */}
             <PlanSection title="Viral Strategy" color="purple" items={result.viralStrategy} />
           </div>
 
@@ -451,7 +816,7 @@ export default function IdeaPage() {
               Start Over
             </button>
             <button
-              onClick={() => { setResult(null); setStep(3); }}
+              onClick={() => { setResult(null); setStep(mode === 'formula' ? 2 : 3); }}
               className="flex-1 py-3 bg-white text-black rounded-xl font-semibold"
             >
               Refine & Regenerate
@@ -483,4 +848,57 @@ function PlanSection({ title, color, items }: { title: string; color: string; it
       </div>
     </div>
   )
+}
+
+// Helper functions for formula generation
+function getCoreLoop(template: string): string {
+  const loops: Record<string, string> = {
+    'Simulator': 'Collect → Upgrade → Prestige → Repeat with multipliers',
+    'Tower Defense': 'Place units → Upgrade → Defend waves → Unlock new units',
+    'Action RPG': 'Fight → Loot → Level up → Fight stronger enemies',
+    'Tycoon': 'Build → Earn → Expand → Automate',
+    'Obby': 'Navigate → Checkpoint → Progress → Unlock',
+    'Horror/Escape': 'Survive → Solve → Escape → Win',
+  }
+  return loops[template] || 'Core gameplay loop'
+}
+
+function getDescription(template: string, theme: string): string {
+  return `${theme}-themed ${template.toLowerCase()} with proven market demand`
+}
+
+function getMechanics(template: string): string[] {
+  const mechanics: Record<string, string[]> = {
+    'Simulator': ['Click/tap collection', 'Upgrade tree', 'Prestige system', 'Pet companions', 'Auto-collectors'],
+    'Tower Defense': ['Unit placement', 'Wave defense', 'Unit upgrades', 'Boss fights', 'Co-op mode'],
+    'Action RPG': ['Combat system', 'Loot drops', 'Level progression', 'Boss raids', 'Equipment'],
+    'Tycoon': ['Building placement', 'Income generation', 'Expansion system', 'Automation'],
+    'Obby': ['Obstacle navigation', 'Checkpoints', 'Stage progression', 'Time trials'],
+    'Horror/Escape': ['Survival mechanics', 'Puzzle solving', 'Chase sequences', 'Multiplayer'],
+  }
+  return mechanics[template] || ['Core mechanics']
+}
+
+function getMonetization(template: string): string[] {
+  const monetization: Record<string, string[]> = {
+    'Simulator': ['2x/3x Multipliers', 'Auto-collect', 'VIP Benefits', 'Currency packs'],
+    'Tower Defense': ['Unit crates/gacha', 'Extra slots', 'Premium units', 'Battle pass'],
+    'Action RPG': ['Gacha weapons', 'Battle pass', 'Premium gear', 'XP boosters'],
+    'Tycoon': ['Auto-rebirth', 'Expansion packs', 'Premium buildings', 'VIP'],
+    'Obby': ['Skip stages', 'Cosmetics', 'Trail effects', 'Premium areas'],
+    'Horror/Escape': ['Character skins', 'Emotes', 'Premium roles', 'Private servers'],
+  }
+  return monetization[template] || ['Gamepasses', 'Dev products']
+}
+
+function getRetention(template: string): string[] {
+  const retention: Record<string, string[]> = {
+    'Simulator': ['Daily rewards', 'Prestige goals', 'Collection completion', 'Events'],
+    'Tower Defense': ['Unit collection', 'Challenge modes', 'Leaderboards', 'Updates'],
+    'Action RPG': ['Daily quests', 'Raid resets', 'PvP seasons', 'New content'],
+    'Tycoon': ['Milestones', 'Competitions', 'Seasonal themes', 'Achievements'],
+    'Obby': ['New stages', 'Speedrun boards', 'Daily challenges', 'Cosmetic unlocks'],
+    'Horror/Escape': ['New maps', 'Seasonal events', 'Role variety', 'Friend invites'],
+  }
+  return retention[template] || ['Daily rewards', 'Updates']
 }

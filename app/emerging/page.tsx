@@ -29,16 +29,47 @@ const CATEGORIES = [
   { id: 'tower defense', label: 'Tower Defense' },
 ]
 
+const SORT_OPTIONS = [
+  { id: 'breakout', label: 'Breakout Hits (Newest + Performing)' },
+  { id: 'score', label: 'Emerging Score' },
+  { id: 'ccu', label: 'Highest CCU' },
+  { id: 'revenue', label: 'Highest Revenue' },
+  { id: 'newest', label: 'Newest First' },
+  { id: 'rating', label: 'Best Rated' },
+]
+
 export default function EmergingStarsPage() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [category, setCategory] = useState('')
-  const [maxMonths, setMaxMonths] = useState(6)
+  const [maxMonths, setMaxMonths] = useState(3)
   const [minCcu, setMinCcu] = useState(100)
   const [totalFound, setTotalFound] = useState(0)
   const [recentCount, setRecentCount] = useState(0)
   const [selectedGames, setSelectedGames] = useState<string[]>([])
+  const [savedGames, setSavedGames] = useState<string[]>([])
+  const [savingGame, setSavingGame] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState('breakout')
+
+  const saveGame = async (game: Game) => {
+    setSavingGame(game.placeId)
+    try {
+      const res = await fetch('/api/save-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game })
+      })
+
+      if (!res.ok) throw new Error('Failed to save')
+
+      setSavedGames(prev => [...prev, game.placeId])
+    } catch (err) {
+      console.error('Failed to save game:', err)
+    } finally {
+      setSavingGame(null)
+    }
+  }
 
   useEffect(() => {
     loadGames()
@@ -101,6 +132,48 @@ export default function EmergingStarsPage() {
     return `${months}mo old`
   }
 
+  const getAgeDays = (dateString: string): number => {
+    const created = new Date(dateString)
+    const now = new Date()
+    return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const sortedGames = [...games].sort((a, b) => {
+    const aCcu = a.metrics?.currentPlayers || 0
+    const bCcu = b.metrics?.currentPlayers || 0
+    const aRev = a.metrics?.estimatedRevenue || 0
+    const bRev = b.metrics?.estimatedRevenue || 0
+    const aRating = parseFloat(a.metrics?.likeRatio || '0')
+    const bRating = parseFloat(b.metrics?.likeRatio || '0')
+    const aAge = getAgeDays(a.dates.created)
+    const bAge = getAgeDays(b.dates.created)
+
+    switch (sortBy) {
+      case 'breakout': {
+        // Breakout score: higher CCU + newer = better
+        // Formula: CCU * (1 + (180 - ageDays) / 180) - rewards high CCU AND recency
+        const maxDays = 180
+        const aRecencyBonus = Math.max(0, (maxDays - aAge) / maxDays)
+        const bRecencyBonus = Math.max(0, (maxDays - bAge) / maxDays)
+        const aBreakout = aCcu * (1 + aRecencyBonus * 2) // 2x weight on recency
+        const bBreakout = bCcu * (1 + bRecencyBonus * 2)
+        return bBreakout - aBreakout
+      }
+      case 'score':
+        return b.emergingScore - a.emergingScore
+      case 'ccu':
+        return bCcu - aCcu
+      case 'revenue':
+        return bRev - aRev
+      case 'newest':
+        return aAge - bAge // Lower age = newer = first
+      case 'rating':
+        return bRating - aRating
+      default:
+        return b.emergingScore - a.emergingScore
+    }
+  })
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -114,7 +187,7 @@ export default function EmergingStarsPage() {
 
       {/* Filters */}
       <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Category */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">Category</label>
@@ -131,16 +204,16 @@ export default function EmergingStarsPage() {
 
           {/* Max Age */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Max Age (months)</label>
+            <label className="block text-xs text-gray-500 mb-1">Max Age</label>
             <select
               value={maxMonths}
               onChange={(e) => setMaxMonths(parseInt(e.target.value))}
               className="w-full px-3 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-gray-500"
             >
+              <option value={1}>1 month</option>
+              <option value={2}>2 months</option>
               <option value={3}>3 months</option>
               <option value={6}>6 months</option>
-              <option value={9}>9 months</option>
-              <option value={12}>12 months</option>
             </select>
           </div>
 
@@ -157,6 +230,21 @@ export default function EmergingStarsPage() {
               <option value={500}>500+</option>
               <option value={1000}>1,000+</option>
               <option value={5000}>5,000+</option>
+              <option value={10000}>10,000+</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-gray-500"
+            >
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
@@ -211,9 +299,9 @@ export default function EmergingStarsPage() {
       )}
 
       {/* Results */}
-      {!loading && games.length > 0 && (
+      {!loading && sortedGames.length > 0 && (
         <div className="space-y-3">
-          {games.map((game, index) => {
+          {sortedGames.map((game, index) => {
             const isSelected = selectedGames.includes(game.placeId)
             const ccu = game.metrics?.currentPlayers || 0
             const visits = game.metrics?.visits || 0
@@ -276,6 +364,21 @@ export default function EmergingStarsPage() {
                     </div>
                   </div>
 
+                  {/* Save Button */}
+                  <button
+                    onClick={() => saveGame(game)}
+                    disabled={savingGame === game.placeId || savedGames.includes(game.placeId)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
+                      savedGames.includes(game.placeId)
+                        ? 'bg-green-500/20 text-green-400 cursor-default'
+                        : savingGame === game.placeId
+                        ? 'bg-gray-700 text-gray-400 cursor-wait'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white'
+                    }`}
+                  >
+                    {savedGames.includes(game.placeId) ? 'Saved' : savingGame === game.placeId ? '...' : 'Save'}
+                  </button>
+
                   {/* Select Checkbox */}
                   <button
                     onClick={() => toggleSelect(game.placeId)}
@@ -315,7 +418,7 @@ export default function EmergingStarsPage() {
       )}
 
       {/* No Results */}
-      {!loading && !error && games.length === 0 && (
+      {!loading && !error && sortedGames.length === 0 && (
         <div className="text-center py-16 text-gray-500">
           <p className="text-lg">No emerging stars found</p>
           <p className="text-sm mt-2">Try adjusting your filters or search a different category</p>
