@@ -138,7 +138,7 @@ export async function GET(request: Request) {
     ])
 
     // Create a map for quick lookup
-    const detailsMap = new Map(details.map((d: any) => [d.id, d]))
+    const detailsMap = new Map<number, any>(details.map((d: any) => [d.id, d]))
     const votesMap = new Map<number, { upVotes: number; downVotes: number }>(votes.map((v: any) => [v.id, v]))
 
     // Build enriched game list
