@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import WorkflowGuide from '@/components/WorkflowGuide'
 import FirstTimeHint from '@/components/FirstTimeHint'
@@ -62,8 +63,9 @@ const MONETIZATION = [
   { id: 'gacha', label: 'Gacha/Loot' },
 ]
 
-export default function IdeaPage() {
-  const [mode, setMode] = useState<'choose' | 'scratch' | 'formula' | 'hybrid'>('choose')
+function IdeaPageContent() {
+  const searchParams = useSearchParams()
+  const [mode, setMode] = useState<'choose' | 'scratch' | 'formula' | 'hybrid' | 'from-analysis'>('choose')
   const [step, setStep] = useState(1)
   const [idea, setIdea] = useState({
     name: '',
@@ -78,6 +80,13 @@ export default function IdeaPage() {
   const [helpingLoop, setHelpingLoop] = useState(false)
   const [loopSuggestion, setLoopSuggestion] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [fromAnalysisData, setFromAnalysisData] = useState<{
+    vertical: string
+    theme: string
+    loop: string
+    complexity: string
+    groupName: string
+  } | null>(null)
 
   // For formula mode
   const [hotFormulas, setHotFormulas] = useState<ProvenFormula[]>([])
@@ -96,6 +105,39 @@ export default function IdeaPage() {
     suggestedPatterns: { retention: string[], monetization: string[], viral: string[] }
   } | null>(null)
   const [researchingMarket, setResearchingMarket] = useState(false)
+
+  // Check if coming from analysis page with pre-filled data
+  useEffect(() => {
+    const from = searchParams.get('from')
+    if (from === 'analysis') {
+      const vertical = searchParams.get('vertical') || ''
+      const theme = searchParams.get('theme') || ''
+      const loop = searchParams.get('loop') || ''
+      const complexity = searchParams.get('complexity') || ''
+      const groupName = searchParams.get('groupName') || ''
+
+      setFromAnalysisData({ vertical, theme, loop, complexity, groupName })
+      setMode('from-analysis')
+
+      // Pre-fill idea with analysis data
+      const templateMap: Record<string, string> = {
+        'Simulator': 'simulator',
+        'Tower Defense': 'tower-defense',
+        'Tycoon': 'tycoon',
+        'Horror': 'horror',
+        'Escape-Survival': 'horror', // Map escape to horror template
+        'RPG': 'fighting',
+        'Pet': 'simulator',
+        'Obby': 'obby',
+      }
+      setIdea(prev => ({
+        ...prev,
+        template: templateMap[vertical] || 'other',
+        theme: theme,
+        coreLoop: loop,
+      }))
+    }
+  }, [searchParams])
 
   // Research market for scratch mode - find real competitors and gaps
   const researchMarket = async () => {
@@ -411,6 +453,102 @@ export default function IdeaPage() {
     setIdea({ name: '', template: '', theme: '', coreLoop: '', monetization: [], uniqueHook: '' })
     setLoopSuggestion(null)
     setError(null)
+  }
+
+  // FROM ANALYSIS MODE - User came from the analyze page with pre-filled data
+  if (mode === 'from-analysis' && fromAnalysisData && !result) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <WorkflowGuide />
+
+        <div>
+          <Link href="/analyze" className="text-gray-500 hover:text-white text-sm mb-2 inline-block">
+            ← Back to Analysis
+          </Link>
+          <h1 className="text-3xl font-bold">Create Your Game</h1>
+          <p className="text-gray-400 mt-1">Based on your research: {fromAnalysisData.groupName}</p>
+        </div>
+
+        {/* Pre-filled Research Summary */}
+        <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-700/50 rounded-xl p-6">
+          <div className="text-xs text-green-400 uppercase tracking-wider mb-3">FROM YOUR RESEARCH</div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-gray-500 text-sm">Vertical</div>
+              <div className="font-medium">{fromAnalysisData.vertical}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm">Theme</div>
+              <div className="font-medium">{fromAnalysisData.theme}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm">Complexity</div>
+              <div className="font-medium">{fromAnalysisData.complexity}</div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-800">
+            <div className="text-gray-500 text-sm">Core Loop</div>
+            <div className="font-medium text-green-400">{fromAnalysisData.loop}</div>
+          </div>
+        </div>
+
+        {/* Add Your Twist Form */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-5">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Game Name</label>
+            <input
+              type="text"
+              value={idea.name}
+              onChange={(e) => setIdea(p => ({ ...p, name: e.target.value }))}
+              placeholder={`My ${fromAnalysisData.theme} ${fromAnalysisData.vertical}`}
+              className="w-full bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">
+              Your Unique Twist <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={idea.uniqueHook}
+              onChange={(e) => setIdea(p => ({ ...p, uniqueHook: e.target.value }))}
+              placeholder="What makes YOUR version different from the games you analyzed?&#10;&#10;Examples:&#10;• Different visual style (pixel art, 3D realistic, cartoonish)&#10;• New game mode (co-op, competitive PvP, speedrun)&#10;• Unique mechanic layered on top&#10;• Different target audience (casual vs hardcore)"
+              className="w-full h-36 bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600 resize-none"
+            />
+            <p className="text-gray-500 text-xs mt-2">This is how you&apos;ll be 20% better than competitors</p>
+          </div>
+
+          {error && (
+            <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={qualifyIdea}
+            disabled={loading || idea.uniqueHook.length < 20}
+            className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin">⟳</span> AI Generating Your Plan...
+              </>
+            ) : (
+              <>Generate Game Plan</>
+            )}
+          </button>
+
+          <div className="text-center">
+            <button
+              onClick={() => { setMode('choose'); setFromAnalysisData(null); }}
+              className="text-gray-500 hover:text-white text-sm"
+            >
+              Or start fresh with a different approach →
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Mode Selection
@@ -1565,4 +1703,12 @@ function getRetention(template: string): string[] {
     'Horror/Escape': ['New maps', 'Seasonal events', 'Role variety', 'Friend invites'],
   }
   return retention[template] || ['Daily rewards', 'Updates']
+}
+
+export default function IdeaPage() {
+  return (
+    <Suspense fallback={<div className="text-gray-400">Loading...</div>}>
+      <IdeaPageContent />
+    </Suspense>
+  )
 }

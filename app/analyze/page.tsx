@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import WorkflowGuide from '@/components/WorkflowGuide'
 import FirstTimeHint from '@/components/FirstTimeHint'
 
@@ -668,6 +669,25 @@ function AnalyzeContent() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* NEXT STEP: Create Idea - This is the key CTA */}
+          <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-700/50 rounded-xl p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold">Ready to build your version?</h3>
+                <p className="text-gray-400 mt-1">
+                  Use this research to create a game with the proven patterns above
+                </p>
+              </div>
+              <Link
+                href={`/idea?from=analysis&vertical=${encodeURIComponent(analysis.characteristics.vertical)}&theme=${encodeURIComponent(analysis.characteristics.theme)}&loop=${encodeURIComponent(analysis.formula.coreMechanic)}&complexity=${encodeURIComponent(analysis.characteristics.complexity)}&groupName=${encodeURIComponent(analysis.groupName)}`}
+                className="px-8 py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-colors whitespace-nowrap flex items-center gap-2"
+              >
+                <span>Create Your Game Idea</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
         </>
       )}

@@ -22,15 +22,54 @@ interface GameData {
 function detectVertical(name: string, description: string): string {
   const combined = `${name} ${description}`.toLowerCase()
 
-  // Specific mechanics first (most important for competitor grouping)
-  if (combined.includes('escape') || combined.includes('survive') || combined.includes('run from') || combined.includes('avoid')) return 'escape-survival'
-  if (combined.includes('mine') || combined.includes('mining') || combined.includes('dig')) return 'mining-simulator'
+  // Escape/Survival/Disaster games - check FIRST (high priority keywords)
+  if (combined.includes('escape') || combined.includes('tsunami') || combined.includes('flood') ||
+      combined.includes('survive') || combined.includes('disaster') || combined.includes('run from') ||
+      combined.includes('avoid') || combined.includes('hide from') || combined.includes('run away') ||
+      combined.includes('earthquake') || combined.includes('volcano') || combined.includes('meteor')) {
+    return 'escape-survival'
+  }
+
+  // Lucky block / breaking games
+  if (combined.includes('lucky block') || combined.includes('mystery box') ||
+      combined.includes('break a') || combined.includes('break the') ||
+      (combined.includes('break') && combined.includes('block'))) {
+    return 'lucky-block'
+  }
+
+  // Card collection games
+  if (combined.includes('card collection') || combined.includes('card game') ||
+      combined.includes('trading card') || combined.includes('collect card') ||
+      (combined.includes('card') && combined.includes('collection'))) {
+    return 'card-collection'
+  }
+
+  // Spin/gacha games
+  if (combined.includes('spin a') || combined.includes('spin the') || combined.includes('gacha') ||
+      combined.includes('wheel') || combined.includes('spinner') ||
+      (combined.includes('spin') && !combined.includes('spider'))) {
+    return 'spin-gacha'
+  }
+
+  // Mining/digging games
+  if (combined.includes('mine') || combined.includes('mining') || combined.includes('dig') ||
+      combined.includes('drill') || combined.includes('excavate')) {
+    return 'mining-simulator'
+  }
+
+  // Specific mechanics
+  if (combined.includes('clicker') || combined.includes('click to')) return 'clicker'
   if (combined.includes('collect') || combined.includes('collector')) return 'collector'
-  if (combined.includes('clicker') || combined.includes('click')) return 'clicker'
-  if (combined.includes('merge') || combined.includes('combining')) return 'merge'
-  if (combined.includes('lucky block') || combined.includes('mystery box') || combined.includes('break')) return 'lucky-block'
-  if (combined.includes('tower defense') || combined.includes(' td ') || combined.includes('defenders')) return 'tower-defense'
-  if (combined.includes('simulator') || combined.includes('sim')) return 'simulator'
+  if (combined.includes('merge') || combined.includes('combining') || combined.includes('fuse')) return 'merge'
+
+  // Tower defense
+  if (combined.includes('tower defense') || combined.includes(' td ') ||
+      combined.includes('defenders') || combined.includes('defend')) {
+    return 'tower-defense'
+  }
+
+  // Simulators (check after more specific types)
+  if (combined.includes('simulator') || combined.includes('sim ')) return 'simulator'
   if (combined.includes('tycoon')) return 'tycoon'
   if (combined.includes('obby') || combined.includes('parkour') || combined.includes('obstacle')) return 'obby'
   if (combined.includes('horror') || combined.includes('scary') || combined.includes('backroom')) return 'horror'
@@ -85,12 +124,14 @@ function buildSearchKeywords(vertical: string, theme: string, name: string): str
     'roleplay': ['roleplay', 'brookhaven'],
     'fighting': ['fighting', 'pvp', 'battle'],
     'racing': ['racing', 'car', 'driving'],
-    'escape-survival': ['escape', 'survive', 'tsunami', 'disaster', 'run from'],
+    'escape-survival': ['escape tsunami', 'survive disaster', 'escape flood', 'escape game'],
     'mining-simulator': ['mining simulator', 'mine', 'dig'],
     'clicker': ['clicker', 'clicking simulator'],
     'collector': ['collect', 'collector'],
     'merge': ['merge', 'merge game'],
-    'lucky-block': ['lucky block', 'mystery box'],
+    'lucky-block': ['lucky block', 'break a lucky'],
+    'card-collection': ['card collection', 'anime card', 'trading card'],
+    'spin-gacha': ['spin a', 'gacha', 'spinner'],
     'other': ['simulator', 'game 2025']
   }
 
@@ -289,14 +330,16 @@ export async function GET(request: Request) {
           'simulator': ['clicker', 'collector', 'mining-simulator', 'tycoon'],
           'mining-simulator': ['simulator', 'collector', 'clicker'],
           'escape-survival': ['obby', 'horror', 'other'], // escape games often mis-detected
-          'lucky-block': ['simulator', 'mining-simulator', 'collector', 'clicker'],
+          'lucky-block': ['simulator', 'mining-simulator', 'collector', 'clicker', 'spin-gacha'],
           'clicker': ['simulator', 'collector', 'mining-simulator'],
-          'collector': ['simulator', 'pet', 'clicker'],
+          'collector': ['simulator', 'pet', 'clicker', 'card-collection'],
+          'card-collection': ['collector', 'pet', 'spin-gacha'],
+          'spin-gacha': ['lucky-block', 'collector', 'card-collection'],
           'obby': ['escape-survival', 'parkour'],
           'horror': ['escape-survival', 'other'],
           'tycoon': ['simulator', 'clicker'],
           'tower-defense': ['rpg', 'fighting'],
-          'pet': ['collector', 'simulator'],
+          'pet': ['collector', 'simulator', 'card-collection'],
           'other': ['escape-survival', 'obby', 'horror'] // 'other' often means undetected escape games
         }
         if (relatedVerticals[vertical]?.includes(gameVertical)) {
