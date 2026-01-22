@@ -158,37 +158,132 @@ function buildSearchKeywords(vertical: string, theme: string, name: string): str
   return keywords.slice(0, 3) // Limit to 3 searches
 }
 
-// Search Roblox for games
+// Search Roblox using the Games Discovery API
 async function searchRoblox(keyword: string): Promise<GameData[]> {
   try {
-    const searchRes = await fetch(
-      `https://games.roblox.com/v1/games/list?sortToken=&gameFilter=1&pageNumber=1&startRows=0&maxRows=20&keyword=${encodeURIComponent(keyword)}`,
-      { next: { revalidate: 300 } }
-    )
+    // Use the Roblox Games Search API (v1/games/search is deprecated, use omni-search)
+    const searchUrl = `https://apis.roblox.com/games-omni-search/v1/search?searchQuery=${encodeURIComponent(keyword)}&pageToken=&sessionId=0&maxRows=30`
+    console.log(`[find-similar] Searching via omni-search: ${keyword}`)
 
-    if (!searchRes.ok) return []
+    const searchRes = await fetch(searchUrl, {
+      headers: { 'Accept': 'application/json' },
+      next: { revalidate: 300 }
+    })
+
+    if (!searchRes.ok) {
+      console.log(`[find-similar] Omni-search failed: ${searchRes.status}`)
+      // Fallback: try the discovery API with keyword sort
+      return await searchViaDiscovery(keyword)
+    }
 
     const searchData = await searchRes.json()
-    const games = searchData.games || []
+    const entries = searchData.entries || []
+    console.log(`[find-similar] Omni-search found ${entries.length} results for "${keyword}"`)
+
+    // Get universe details for the found games
+    const universeIds = entries
+      .filter((e: any) => e.contentType === 'Game' && e.universeId)
+      .map((e: any) => e.universeId)
+      .slice(0, 20)
+
+    if (universeIds.length === 0) {
+      return await searchViaDiscovery(keyword)
+    }
+
+    // Get detailed info
+    const detailsRes = await fetch(
+      `https://games.roblox.com/v1/games?universeIds=${universeIds.join(',')}`,
+      { headers: { 'Accept': 'application/json' } }
+    )
+    if (!detailsRes.ok) return []
+    const detailsData = await detailsRes.json()
+    const games = detailsData.data || []
 
     return games.map((g: any) => ({
-      placeId: g.placeId?.toString() || '',
-      universeId: g.universeId || 0,
+      placeId: g.rootPlaceId?.toString() || '',
+      universeId: g.id || 0,
       name: g.name || 'Unknown',
-      description: g.gameDescription || '',
+      description: g.description || '',
       genre: g.genre || '',
-      creator: { name: g.creatorName || 'Unknown', type: g.creatorType || '' },
+      creator: { name: g.creator?.name || 'Unknown', type: g.creator?.type || '' },
       metrics: {
-        visits: g.placeVisits || 0,
-        currentPlayers: g.playerCount || 0,
-        likeRatio: g.totalUpVotes && g.totalDownVotes
-          ? ((g.totalUpVotes / (g.totalUpVotes + g.totalDownVotes)) * 100).toFixed(1)
-          : '0',
-        estimatedRevenue: Math.round((g.playerCount || 0) * 50) // Rough estimate
+        visits: g.visits || 0,
+        currentPlayers: g.playing || 0,
+        likeRatio: '0', // Will be updated
+        estimatedRevenue: Math.round((g.playing || 0) * 50)
       }
     }))
   } catch (err) {
     console.error(`Search failed for "${keyword}":`, err)
+    return await searchViaDiscovery(keyword)
+  }
+}
+
+// Fallback: Search via the Explore/Discovery API
+async function searchViaDiscovery(keyword: string): Promise<GameData[]> {
+  try {
+    // Get "Up-and-Coming" games and filter by keyword
+    const discoverUrl = `https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=0&sortId=up-and-coming&pageToken=`
+    console.log(`[find-similar] Fallback: searching Up-and-Coming for "${keyword}"`)
+
+    const discoverRes = await fetch(discoverUrl, {
+      headers: { 'Accept': 'application/json' },
+      next: { revalidate: 300 }
+    })
+
+    if (!discoverRes.ok) {
+      console.log(`[find-similar] Discovery API failed: ${discoverRes.status}`)
+      return []
+    }
+
+    const discoverData = await discoverRes.json()
+    const allGames = discoverData.games || []
+
+    // Filter games that match the keyword in name
+    const keywordLower = keyword.toLowerCase()
+    const matchingGames = allGames.filter((g: any) => {
+      const name = (g.name || '').toLowerCase()
+      return name.includes(keywordLower) ||
+             keywordLower.split(' ').some((word: string) => word.length > 3 && name.includes(word))
+    })
+
+    console.log(`[find-similar] Discovery found ${matchingGames.length} matches for "${keyword}"`)
+
+    // Get universe details
+    const universeIds = matchingGames.slice(0, 20).map((g: any) => g.universeId)
+    if (universeIds.length === 0) return []
+
+    const detailsRes = await fetch(
+      `https://games.roblox.com/v1/games?universeIds=${universeIds.join(',')}`,
+      { headers: { 'Accept': 'application/json' } }
+    )
+    if (!detailsRes.ok) return []
+    const detailsData = await detailsRes.json()
+
+    // Create lookup map
+    const detailsMap = new Map((detailsData.data || []).map((d: any) => [d.id, d]))
+
+    return matchingGames.slice(0, 20).map((raw: any) => {
+      const detail = detailsMap.get(raw.universeId) as any
+      return {
+        placeId: raw.rootPlaceId?.toString() || detail?.rootPlaceId?.toString() || '',
+        universeId: raw.universeId || 0,
+        name: raw.name || detail?.name || 'Unknown',
+        description: detail?.description || '',
+        genre: detail?.genre || '',
+        creator: { name: detail?.creator?.name || 'Unknown', type: detail?.creator?.type || '' },
+        metrics: {
+          visits: detail?.visits || 0,
+          currentPlayers: raw.playerCount || detail?.playing || 0,
+          likeRatio: raw.totalUpVotes && raw.totalDownVotes
+            ? ((raw.totalUpVotes / (raw.totalUpVotes + raw.totalDownVotes)) * 100).toFixed(1)
+            : '0',
+          estimatedRevenue: Math.round((raw.playerCount || detail?.playing || 0) * 50)
+        }
+      }
+    })
+  } catch (err) {
+    console.error(`Discovery search failed for "${keyword}":`, err)
     return []
   }
 }

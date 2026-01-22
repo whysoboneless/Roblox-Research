@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Market research tool for identifying qualified competitor groups and trends on Roblox",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "dev": "next dev",
