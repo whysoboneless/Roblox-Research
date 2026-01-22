@@ -274,41 +274,9 @@ export async function GET(request: Request) {
       }
     }
 
-    // Step 5: If not enough games found, try emerging API as fallback
-    if (allGames.length < limit) {
-      try {
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : 'http://localhost:3000'
-        const emergingRes = await fetch(`${baseUrl}/api/emerging?limit=20&minCcu=100`)
-        if (emergingRes.ok) {
-          const emergingData = await emergingRes.json()
-          const emergingGames = emergingData.games || []
-
-          for (const eg of emergingGames) {
-            if (!seenIds.has(eg.placeId) && eg.placeId !== placeId) {
-              seenIds.add(eg.placeId)
-              allGames.push({
-                placeId: eg.placeId,
-                universeId: eg.universeId,
-                name: eg.name,
-                description: '',
-                genre: eg.genre || '',
-                creator: eg.creator,
-                metrics: {
-                  visits: eg.metrics?.visits || 0,
-                  currentPlayers: eg.metrics?.currentPlayers || 0,
-                  likeRatio: eg.metrics?.likeRatio || '0',
-                  estimatedRevenue: eg.metrics?.estimatedRevenue || 0
-                }
-              })
-            }
-          }
-        }
-      } catch (emergingErr) {
-        console.log('Emerging fallback failed:', emergingErr)
-      }
-    }
+    // Step 5: NO FALLBACK - don't add random unrelated games
+    // If keyword search fails, that's fine - return fewer or no results
+    // Bad competitors are worse than no competitors
 
     // Step 6: Score and rank similar games
     // CRITICAL: Games must have similar MECHANICS to be true competitors
@@ -359,10 +327,10 @@ export async function GET(request: Request) {
       return { ...game, similarityScore: score, detectedVertical: gameVertical, detectedTheme: gameTheme }
     })
 
-    // Filter out games with very low scores (not real competitors)
-    // Threshold: 45 allows related verticals (30) + matching theme (15)
-    // This catches games that are close enough to be worth analyzing
-    const qualifiedGames = scoredGames.filter(g => g.similarityScore >= 45)
+    // Filter out games with low scores (not real competitors)
+    // Threshold: 70 = SAME VERTICAL required
+    // Don't show loosely related games - that's not helpful
+    const qualifiedGames = scoredGames.filter(g => g.similarityScore >= 70)
 
     // Sort by similarity score, then by CCU
     qualifiedGames.sort((a, b) => {
