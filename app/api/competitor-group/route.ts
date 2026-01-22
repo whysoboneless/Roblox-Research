@@ -141,7 +141,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      groupId,
+      groupId: savedGroup?.group_id || existingGroup?.group_id || `group_${Date.now()}`,
       groupName: finalGroupName,
 
       // Structural Characteristics (like competitor group in digital media)
