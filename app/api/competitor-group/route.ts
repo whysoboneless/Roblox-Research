@@ -49,38 +49,65 @@ export async function POST(request: Request) {
       emergingStars
     )
 
-    // Step 7: Save to database
-    const groupId = `group_${Date.now()}`
+    // Step 7: Save to database (with deduplication)
     const finalGroupName = groupName || groupCharacteristics.subVertical || 'Competitor Group'
 
-    const { data: savedGroup, error: saveError } = await supabase
+    // Check if a group with the same name already exists
+    const { data: existingGroup } = await supabase
       .from('competitor_groups')
-      .insert({
-        group_id: groupId,
-        group_name: finalGroupName,
-        structural_characteristics: {
-          category: groupCharacteristics.category,
-          vertical: groupCharacteristics.vertical,
-          subVertical: groupCharacteristics.subVertical,
-          theme: groupCharacteristics.theme,
-          contentStyle: groupCharacteristics.contentStyle,
-          dominantCoreLoop: groupCharacteristics.coreLoop
-        },
-        qualification_criteria: {
-          score: qualification.score,
-          checks: qualification.checks,
-          emergingStarCount: emergingStars.length
-        },
-        analysis_notes: {
-          overlappingPatterns,
-          replicationGuide,
-          classifiedAt: new Date().toISOString()
-        },
-        is_qualified: qualification.isQualified,
-        qualification_score: qualification.score
-      })
-      .select()
-      .single()
+      .select('id, group_id')
+      .eq('group_name', finalGroupName)
+      .maybeSingle()
+
+    let savedGroup: any = null
+    let saveError: any = null
+
+    const groupData = {
+      group_name: finalGroupName,
+      structural_characteristics: {
+        category: groupCharacteristics.category,
+        vertical: groupCharacteristics.vertical,
+        subVertical: groupCharacteristics.subVertical,
+        theme: groupCharacteristics.theme,
+        contentStyle: groupCharacteristics.contentStyle,
+        dominantCoreLoop: groupCharacteristics.coreLoop
+      },
+      qualification_criteria: {
+        score: qualification.score,
+        checks: qualification.checks,
+        emergingStarCount: emergingStars.length
+      },
+      analysis_notes: {
+        overlappingPatterns,
+        replicationGuide,
+        classifiedAt: new Date().toISOString()
+      },
+      is_qualified: qualification.isQualified,
+      qualification_score: qualification.score,
+      updated_at: new Date().toISOString()
+    }
+
+    if (existingGroup) {
+      // UPDATE existing group instead of creating duplicate
+      const { data, error } = await supabase
+        .from('competitor_groups')
+        .update(groupData)
+        .eq('id', existingGroup.id)
+        .select()
+        .single()
+      savedGroup = data
+      saveError = error
+    } else {
+      // Create new group
+      const groupId = `group_${Date.now()}`
+      const { data, error } = await supabase
+        .from('competitor_groups')
+        .insert({ ...groupData, group_id: groupId })
+        .select()
+        .single()
+      savedGroup = data
+      saveError = error
+    }
 
     if (saveError) {
       console.error('Failed to save group:', saveError)

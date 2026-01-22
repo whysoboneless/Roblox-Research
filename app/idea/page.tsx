@@ -276,7 +276,8 @@ function IdeaPageContent() {
           .filter((group: any) => group.qualification_score >= 50)
           .map((group: any) => {
             const chars = group.structural_characteristics || {}
-            const patterns = group.analysis_notes?.overlappingPatterns || {}
+            const metrics = group.analysis_notes?.metrics || {}
+            const patterns = group.analysis_notes?.patterns || group.analysis_notes?.overlappingPatterns || {}
             const guide = group.analysis_notes?.replicationGuide || {}
 
             const exampleGames = group.group_games
@@ -284,28 +285,56 @@ function IdeaPageContent() {
               .map((gg: any) => gg.games?.name)
               .filter(Boolean) || []
 
-            const mustHaveRetention = patterns.mustHave?.retention || []
-            const mustHaveMonetization = patterns.mustHave?.monetization || []
+            // Get monetization from mustHave or all patterns (check length, not just truthy)
+            const rawMustHaveMon = patterns.mustHave?.monetization || []
+            const mustHaveMonetization = rawMustHaveMon.length > 0
+              ? rawMustHaveMon.map((p: any) => typeof p === 'string' ? p : p.pattern || p).slice(0, 4)
+              : (patterns.all?.monetization || []).slice(0, 4).map((p: any) => p.pattern || p)
+            const rawMustHaveRet = patterns.mustHave?.retention || []
+            const mustHaveRetention = rawMustHaveRet.length > 0
+              ? rawMustHaveRet.map((p: any) => typeof p === 'string' ? p : p.pattern || p).slice(0, 4)
+              : (patterns.all?.retention || []).slice(0, 4).map((p: any) => p.pattern || p)
             const coreRequirements = guide.coreRequirements || guide.mustHave || []
 
+            // Clean up the group name for display
+            const displayName = group.group_name
+              ?.replace(/^(escape-survival|simulator|tower-defense|obby|horror|lucky-block|other)\s*-\s*/i, '')
+              || chars.subVertical
+              || `${chars.theme || ''} ${chars.vertical || ''}`
+
+            // Extract core loop from multiple possible sources
+            const coreLoop = chars.dominantCoreLoop
+              || chars.coreLoop
+              || (guide.mustHave && guide.mustHave.length > 0 ? guide.mustHave.slice(0, 2).join(' + ') : null)
+              || 'Core gameplay loop'
+
             return {
-              template: chars.vertical || chars.category || 'Unknown',
+              template: chars.vertical || chars.subGenre || chars.category || 'Unknown',
               theme: chars.theme || 'Unknown',
-              coreLoop: chars.dominantCoreLoop || 'See research for details',
-              description: `${chars.theme || ''} ${chars.vertical || ''} - From your saved research`,
-              avgRevenue: guide.metrics?.avgRevenue || 0,
+              coreLoop,
+              description: chars.subVertical || `${chars.theme || ''} ${chars.vertical || ''} game`,
+              avgRevenue: metrics.avgRevenue || metrics.totalRevenue || 0,
               emergingCount: group.qualification_criteria?.emergingStarCount || group.group_games?.length || 0,
               mechanics: coreRequirements.slice(0, 5),
               monetization: mustHaveMonetization.slice(0, 4),
               retention: mustHaveRetention.slice(0, 4),
               exampleGames,
               groupId: group.group_id,
-              groupName: group.group_name,
+              groupName: displayName,
               qualificationScore: group.qualification_score,
               pitfalls: guide.pitfalls || []
             }
           })
-        formulas.push(...savedFormulas)
+
+        // DEDUPLICATE: Only keep unique formulas by group name
+        const seen = new Set<string>()
+        for (const formula of savedFormulas) {
+          const key = (formula.groupName || '').toLowerCase().trim()
+          if (!seen.has(key)) {
+            seen.add(key)
+            formulas.push(formula)
+          }
+        }
       }
 
       // If no saved research, load from proven patterns library
@@ -660,8 +689,11 @@ function IdeaPageContent() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-xl font-bold">{formula.theme} {formula.template}</h3>
-                    <p className="text-gray-400 mt-1">{formula.description}</p>
+                    <h3 className="text-xl font-bold">{formula.groupName || `${formula.theme} ${formula.template}`}</h3>
+                    <p className="text-gray-400 mt-1">
+                      {formula.description}
+                      {formula.template !== 'Unknown' && <span className="text-gray-600"> · {formula.template}</span>}
+                    </p>
                   </div>
                   <div className="text-right">
                     <div className="text-green-400 font-bold">${(formula.avgRevenue / 1000).toFixed(0)}K/mo avg</div>
