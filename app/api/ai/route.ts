@@ -159,6 +159,125 @@ Focus on ideas that:
 Return ONLY valid JSON, no other text.`
         break
 
+      case 'generate-from-formula':
+        // Auto-generate complete game ideas from a proven formula
+        const formulaContext = `
+PROVEN FORMULA DATA:
+- Template: ${data.formula.template}
+- Theme: ${data.formula.theme}
+- Core Loop: ${data.formula.coreLoop}
+- Avg Revenue: $${(data.formula.avgRevenue / 1000).toFixed(0)}K/month
+- Emerging Stars: ${data.formula.emergingCount}
+- Core Mechanics: ${data.formula.mechanics?.join(', ') || 'Standard mechanics'}
+- Proven Monetization: ${data.formula.monetization?.join(', ') || 'Standard monetization'}
+- Proven Retention: ${data.formula.retention?.join(', ') || 'Standard retention'}
+- Example Games: ${data.formula.exampleGames?.join(', ') || 'None'}
+${data.formula.pitfalls ? `- Known Pitfalls: ${data.formula.pitfalls.join(', ')}` : ''}
+
+EMERGING STARS DATA (live trending games):
+${data.emergingGames?.map((g: any) => `- ${g.name} (${g.metrics?.currentPlayers || 0} CCU, ${g.metrics?.likeRatio || 0}% likes)`).join('\n') || 'No live data available'}
+`
+
+        prompt = `You are a Roblox game idea generator. Generate 3 COMPLETE, READY-TO-USE game concepts based on this proven formula and current market trends.
+
+${formulaContext}
+
+For each game idea, you MUST:
+1. Create a unique, catchy game name (use brainrot/trending themes when appropriate)
+2. Design a specific unique hook that makes it 20% better than existing games
+3. Specify all core mechanics (be detailed, not generic)
+4. Use the proven monetization from the formula
+5. Include the proven retention hooks
+6. Make it feel FRESH and exciting, not a clone
+
+Generate ideas that:
+- Are inspired by the formula but NOT copies of the example games
+- Use current trending themes (brainrot, anime, etc.) when relevant
+- Have a clear unique selling point
+- Would appeal to Roblox players RIGHT NOW
+
+Return in this EXACT JSON format:
+{
+  "ideas": [
+    {
+      "name": "<catchy, trending game name>",
+      "uniqueHook": "<what makes THIS version special - be specific, 2-3 sentences>",
+      "coreLoop": "<detailed gameplay loop>",
+      "mechanics": ["<specific mechanic 1>", "<specific mechanic 2>", ...],
+      "monetization": ["<proven strategy 1>", "<proven strategy 2>", ...],
+      "retention": ["<proven hook 1>", "<proven hook 2>", ...],
+      "viral": ["<viral tactic 1>", "<viral tactic 2>", ...],
+      "whyNow": "<why this would work right now - reference emerging trends>",
+      "difficulty": "<Low/Medium/High>"
+    }
+  ]
+}
+
+Make each idea COMPLETE and READY TO BUILD. Be creative but grounded in what actually works on Roblox.
+Return ONLY valid JSON, no other text.`
+        break
+
+      case 'generate-hybrid':
+        // Auto-generate complete hybrid game ideas
+        const hybridContext = `
+BASE MECHANIC (Proven gameplay):
+- Template: ${data.baseMechanic.template}
+- Core Loop: ${data.baseMechanic.coreLoop}
+- Core Mechanics: ${data.baseMechanic.mechanics?.join(', ') || 'Standard mechanics'}
+- Qualification Score: ${data.baseMechanic.qualificationScore}/100
+
+TRENDING THEME:
+- Theme: ${data.theme.theme}
+- Description: ${data.theme.description || data.theme.theme}
+
+EMERGING STARS DATA (live trending games):
+${data.emergingGames?.map((g: any) => `- ${g.name} (${g.metrics?.currentPlayers || 0} CCU, ${g.metrics?.likeRatio || 0}% likes)`).join('\n') || 'No live data available'}
+`
+
+        prompt = `You are a Roblox hybrid game idea generator. Create 3 COMPLETE, INNOVATIVE game concepts that blend this proven mechanic with this trending theme.
+
+${hybridContext}
+
+You're creating HYBRID games - blend the mechanic and theme in creative ways. Examples:
+- "Skibidi Toilet Escape" = Escape mechanic + Brainrot theme
+- "Anime Tower Defense" = TD mechanic + Anime theme
+- "Horror Simulator" = Simulator mechanic + Horror theme
+
+For each hybrid idea, you MUST:
+1. Create a catchy name that combines both elements
+2. Design a unique hook that blends mechanic + theme in an interesting way
+3. Specify exactly HOW the theme changes the base mechanic
+4. Include all necessary mechanics for the base template
+5. Add theme-specific features that make it unique
+
+Generate ideas that:
+- Feel FRESH and innovative, not generic
+- Actually blend the mechanic and theme (don't just reskin)
+- Would stand out on Roblox TODAY
+- Have viral potential
+
+Return in this EXACT JSON format:
+{
+  "ideas": [
+    {
+      "name": "<catchy hybrid game name>",
+      "uniqueHook": "<how this hybrid is special - 2-3 sentences>",
+      "coreLoop": "<gameplay loop with theme integration>",
+      "mechanics": ["<base mechanic 1>", "<theme-specific mechanic>", ...],
+      "monetization": ["<strategy 1>", "<strategy 2>", ...],
+      "retention": ["<hook 1>", "<hook 2>", ...],
+      "viral": ["<tactic 1>", "<tactic 2>", ...],
+      "themeIntegration": "<how the theme changes the base mechanic>",
+      "whyNow": "<why this hybrid would work right now>",
+      "difficulty": "<Low/Medium/High>"
+    }
+  ]
+}
+
+Make each idea COMPLETE and EXCITING. Show how the hybrid creates something new.
+Return ONLY valid JSON, no other text.`
+        break
+
       default:
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }

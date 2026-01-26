@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import WorkflowGuide from '@/components/WorkflowGuide'
 import FirstTimeHint from '@/components/FirstTimeHint'
+import { UI_CATEGORIES } from '@/lib/roblox-classification'
 
 interface Game {
   placeId: string
@@ -23,14 +24,7 @@ interface Game {
   emergingScore: number
 }
 
-const CATEGORIES = [
-  { id: '', label: 'All Categories' },
-  { id: 'anime', label: 'Anime' },
-  { id: 'simulator', label: 'Simulator' },
-  { id: 'tycoon', label: 'Tycoon' },
-  { id: 'horror', label: 'Horror' },
-  { id: 'tower defense', label: 'Tower Defense' },
-]
+const CATEGORIES = UI_CATEGORIES
 
 const SORT_OPTIONS = [
   { id: 'breakout', label: 'Breakout Hits (Newest + Performing)' },

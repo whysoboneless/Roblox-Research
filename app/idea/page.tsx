@@ -106,6 +106,11 @@ function IdeaPageContent() {
   } | null>(null)
   const [researchingMarket, setResearchingMarket] = useState(false)
 
+  // For auto-generated ideas (formula & hybrid modes)
+  const [generatedIdeas, setGeneratedIdeas] = useState<any[]>([])
+  const [generatingIdeas, setGeneratingIdeas] = useState(false)
+  const [selectedGeneratedIdea, setSelectedGeneratedIdea] = useState<any | null>(null)
+
   // Check if coming from analysis page with pre-filled data
   useEffect(() => {
     const from = searchParams.get('from')
@@ -136,6 +141,52 @@ function IdeaPageContent() {
         theme: theme,
         coreLoop: loop,
       }))
+
+      // Auto-generate ideas based on analysis data
+      const formula: ProvenFormula = {
+        template: vertical,
+        theme: theme,
+        coreLoop: loop,
+        description: groupName,
+        avgRevenue: 50000, // Estimate
+        emergingCount: 3,
+        mechanics: [],
+        monetization: [],
+        retention: [],
+        exampleGames: [],
+        groupName: groupName
+      }
+      setSelectedFormula(formula)
+
+      // Auto-generate ideas after a short delay
+      setTimeout(async () => {
+        setGeneratingIdeas(true)
+        try {
+          const emergingRes = await fetch('/api/emerging?limit=20&minCcu=100')
+          const emergingData = await emergingRes.json()
+
+          const res = await fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'generate-from-formula',
+              data: {
+                formula,
+                emergingGames: emergingData.games || []
+              }
+            })
+          })
+
+          const data = await res.json()
+          if (!data.error) {
+            setGeneratedIdeas(data.result.ideas || [])
+          }
+        } catch (err) {
+          console.error('Failed to auto-generate ideas:', err)
+        } finally {
+          setGeneratingIdeas(false)
+        }
+      }, 500)
     }
   }, [searchParams])
 
@@ -398,6 +449,73 @@ function IdeaPageContent() {
     setStep(2) // Jump to the twist step
   }
 
+  // AI: Generate ideas from formula
+  const generateFromFormula = async (formula: ProvenFormula) => {
+    setGeneratingIdeas(true)
+    setGeneratedIdeas([])
+
+    try {
+      // Fetch emerging games for context
+      const emergingRes = await fetch('/api/emerging?limit=20&minCcu=100')
+      const emergingData = await emergingRes.json()
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate-from-formula',
+          data: {
+            formula,
+            emergingGames: emergingData.games || []
+          }
+        })
+      })
+
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setGeneratedIdeas(data.result.ideas || [])
+    } catch (err) {
+      console.error('Failed to generate ideas:', err)
+      setError('Failed to generate ideas. Please try again.')
+    } finally {
+      setGeneratingIdeas(false)
+    }
+  }
+
+  // AI: Generate hybrid ideas
+  const generateHybrid = async (baseMechanic: ProvenFormula, theme: ProvenFormula) => {
+    setGeneratingIdeas(true)
+    setGeneratedIdeas([])
+
+    try {
+      // Fetch emerging games for context
+      const emergingRes = await fetch('/api/emerging?limit=20&minCcu=100')
+      const emergingData = await emergingRes.json()
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate-hybrid',
+          data: {
+            baseMechanic,
+            theme,
+            emergingGames: emergingData.games || []
+          }
+        })
+      })
+
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setGeneratedIdeas(data.result.ideas || [])
+    } catch (err) {
+      console.error('Failed to generate hybrid ideas:', err)
+      setError('Failed to generate ideas. Please try again.')
+    } finally {
+      setGeneratingIdeas(false)
+    }
+  }
+
   // AI: Help articulate the core loop
   const helpWithLoop = async () => {
     if (!idea.coreLoop.trim() || idea.coreLoop.length < 10) return
@@ -485,22 +603,23 @@ function IdeaPageContent() {
   }
 
   // FROM ANALYSIS MODE - User came from the analyze page with pre-filled data
+  // Auto-generates ideas based on the analyzed formula
   if (mode === 'from-analysis' && fromAnalysisData && !result) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <WorkflowGuide />
 
         <div>
           <Link href="/analyze" className="text-gray-500 hover:text-white text-sm mb-2 inline-block">
             ← Back to Analysis
           </Link>
-          <h1 className="text-3xl font-bold">Create Your Game</h1>
+          <h1 className="text-3xl font-bold">AI-Generated Game Ideas</h1>
           <p className="text-gray-400 mt-1">Based on your research: {fromAnalysisData.groupName}</p>
         </div>
 
         {/* Pre-filled Research Summary */}
         <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-700/50 rounded-xl p-6">
-          <div className="text-xs text-green-400 uppercase tracking-wider mb-3">FROM YOUR RESEARCH</div>
+          <div className="text-xs text-green-400 uppercase tracking-wider mb-3">PROVEN FORMULA</div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <div className="text-gray-500 text-sm">Vertical</div>
@@ -521,61 +640,93 @@ function IdeaPageContent() {
           </div>
         </div>
 
-        {/* Add Your Twist Form */}
-        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-5">
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Game Name</label>
-            <input
-              type="text"
-              value={idea.name}
-              onChange={(e) => setIdea(p => ({ ...p, name: e.target.value }))}
-              placeholder={`My ${fromAnalysisData.theme} ${fromAnalysisData.vertical}`}
-              className="w-full bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600"
-            />
+        {/* Generated Ideas */}
+        {generatingIdeas ? (
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-green-500"></div>
+            <p className="text-gray-500 mt-6 text-lg">AI is creating banger game ideas...</p>
+            <p className="text-gray-600 text-sm mt-2">Analyzing your research and current trends</p>
           </div>
+        ) : generatedIdeas.length > 0 ? (
+          <div className="space-y-4">
+            {generatedIdeas.map((genIdea, i) => (
+              <div
+                key={i}
+                className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 hover:border-green-700 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-green-400">{genIdea.name}</h3>
+                    <div className="mt-2 text-gray-300">{genIdea.uniqueHook}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      genIdea.difficulty === 'Low' ? 'bg-green-900/30 text-green-400' :
+                      genIdea.difficulty === 'Medium' ? 'bg-yellow-900/30 text-yellow-400' :
+                      'bg-red-900/30 text-red-400'
+                    }`}>
+                      {genIdea.difficulty} Difficulty
+                    </div>
+                  </div>
+                </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Your Unique Twist <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={idea.uniqueHook}
-              onChange={(e) => setIdea(p => ({ ...p, uniqueHook: e.target.value }))}
-              placeholder="What makes YOUR version different from the games you analyzed?&#10;&#10;Examples:&#10;• Different visual style (pixel art, 3D realistic, cartoonish)&#10;• New game mode (co-op, competitive PvP, speedrun)&#10;• Unique mechanic layered on top&#10;• Different target audience (casual vs hardcore)"
-              className="w-full h-36 bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600 resize-none"
-            />
-            <p className="text-gray-500 text-xs mt-2">This is how you&apos;ll be 20% better than competitors</p>
+                {/* Core Loop */}
+                <div className="mb-4 p-3 bg-[#1a1a1a] rounded-lg">
+                  <div className="text-xs text-gray-500 mb-1">CORE GAMEPLAY LOOP</div>
+                  <div className="text-sm">{genIdea.coreLoop}</div>
+                </div>
+
+                {/* Mechanics Grid */}
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-xs text-blue-400 mb-2">CORE MECHANICS</div>
+                    <div className="space-y-1">
+                      {genIdea.mechanics.map((m: string, j: number) => (
+                        <div key={j} className="text-sm text-gray-400">• {m}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-yellow-400 mb-2">MONETIZATION</div>
+                    <div className="space-y-1">
+                      {genIdea.monetization.map((m: string, j: number) => (
+                        <div key={j} className="text-sm text-gray-400">• {m}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Why Now */}
+                <div className="mb-4 p-3 bg-purple-950/20 border border-purple-900/30 rounded-lg">
+                  <div className="text-xs text-purple-400 mb-1">WHY THIS WORKS NOW</div>
+                  <div className="text-sm text-gray-300">{genIdea.whyNow}</div>
+                </div>
+
+                {/* Select Button */}
+                <button
+                  onClick={() => {
+                    // Pre-fill idea with generated data
+                    setIdea({
+                      name: genIdea.name,
+                      template: idea.template,
+                      theme: idea.theme,
+                      coreLoop: genIdea.coreLoop,
+                      uniqueHook: genIdea.uniqueHook,
+                      monetization: []
+                    })
+                    setSelectedGeneratedIdea(genIdea)
+                    // Go straight to qualification
+                    qualifyIdea()
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Generating Plan...' : 'Use This Idea & Generate Plan →'}
+                </button>
+              </div>
+            ))}
           </div>
-
-          {error && (
-            <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-lg text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            onClick={qualifyIdea}
-            disabled={loading || idea.uniqueHook.length < 20}
-            className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-          >
-            {loading ? (
-              <>
-                <span className="animate-spin">⟳</span> AI Generating Your Plan...
-              </>
-            ) : (
-              <>Generate Game Plan</>
-            )}
-          </button>
-
-          <div className="text-center">
-            <button
-              onClick={() => { setMode('choose'); setFromAnalysisData(null); }}
-              className="text-gray-500 hover:text-white text-sm"
-            >
-              Or start fresh with a different approach →
-            </button>
-          </div>
-        </div>
+        ) : null}
       </div>
     )
   }
@@ -715,13 +866,25 @@ function IdeaPageContent() {
                   ))}
                 </div>
 
-                {/* Select Button */}
-                <button
-                  onClick={() => selectFormula(formula)}
-                  className="mt-4 w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-medium transition-colors"
-                >
-                  Use This Formula
-                </button>
+                {/* Generate Ideas Button */}
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedFormula(formula)
+                      generateFromFormula(formula)
+                      setStep(2)
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 rounded-lg font-medium transition-colors"
+                  >
+                    🎲 Generate Banger Ideas
+                  </button>
+                  <button
+                    onClick={() => selectFormula(formula)}
+                    className="px-6 py-3 bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 rounded-lg font-medium transition-colors"
+                  >
+                    Add My Own Twist
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -928,133 +1091,360 @@ function IdeaPageContent() {
           </div>
         </div>
 
-        {/* Add Details Form */}
-        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-5">
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Game Name</label>
-            <input
-              type="text"
-              value={idea.name}
-              onChange={(e) => setIdea(p => ({ ...p, name: e.target.value }))}
-              placeholder={`${hybridTheme.theme} ${hybridBase.template}`}
-              className="w-full bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600"
-            />
+        {/* Generate Ideas Button */}
+        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6">
+          <p className="text-gray-400 text-sm mb-4">Let AI create unique hybrid game concepts, or add your own twist</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                generateHybrid(hybridBase, hybridTheme)
+                setStep(4) // Move to generated ideas view
+              }}
+              className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-xl font-semibold"
+            >
+              🎲 Generate Hybrid Ideas
+            </button>
+            <button
+              onClick={() => {
+                // Keep manual mode - proceed to step 4 without generating
+                setIdea(prev => ({
+                  ...prev,
+                  template: hybridBase.template.toLowerCase().replace(' ', '-'),
+                  theme: hybridTheme.theme,
+                  coreLoop: hybridCoreLoop,
+                }));
+                setSelectedFormula({
+                  ...hybridBase,
+                  theme: hybridTheme.theme,
+                  coreLoop: hybridCoreLoop,
+                  description: `${hybridTheme.theme} ${hybridBase.template} hybrid`
+                });
+                setStep(4);
+              }}
+              className="px-6 py-3 bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 rounded-xl font-medium"
+            >
+              Add My Own Twist
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Your Unique Twist <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={idea.uniqueHook}
-              onChange={(e) => setIdea(p => ({ ...p, uniqueHook: e.target.value }))}
-              placeholder="What makes YOUR version different? Examples:
-• Unique character designs
-• Different game mode (co-op, PvP)
-• New mechanics layered on top
-• Different art style"
-              className="w-full h-28 bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:border-gray-600 resize-none"
-            />
-          </div>
-
-          <button
-            onClick={() => {
-              // Pre-fill the idea with hybrid data
-              setIdea(prev => ({
-                ...prev,
-                template: hybridBase.template.toLowerCase().replace(' ', '-'),
-                theme: hybridTheme.theme,
-                coreLoop: hybridCoreLoop,
-              }));
-              setSelectedFormula({
-                ...hybridBase,
-                theme: hybridTheme.theme,
-                coreLoop: hybridCoreLoop,
-                description: `${hybridTheme.theme} ${hybridBase.template} hybrid`
-              });
-              setStep(4);
-            }}
-            disabled={idea.uniqueHook.length < 10}
-            className="w-full py-3 bg-white text-black rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue to Validation
-          </button>
         </div>
       </div>
     )
   }
 
-  // HYBRID MODE - Step 4: Generate Plan (reuses formula mode step 3)
-  if (mode === 'hybrid' && step === 4 && selectedFormula && !result) {
-    return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <button onClick={() => setStep(3)} className="text-gray-500 hover:text-white text-sm mb-2">
-            ← Edit details
-          </button>
-          <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Step 4 of 4</div>
-          <h1 className="text-3xl font-bold">Generate Your Game Plan</h1>
-        </div>
-
-        {/* Summary */}
-        <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-4">
+  // HYBRID MODE - Step 4: Generated Ideas or Manual Plan
+  if (mode === 'hybrid' && step === 4 && !result) {
+    // If we're generating ideas or have generated ideas, show them
+    if (generatingIdeas || generatedIdeas.length > 0) {
+      return (
+        <div className="max-w-4xl mx-auto space-y-6">
           <div>
-            <div className="text-gray-500 text-sm">Game Name</div>
-            <div className="font-bold text-lg">{idea.name || `${hybridTheme?.theme} ${hybridBase?.template}`}</div>
+            <button onClick={() => { setStep(3); setGeneratedIdeas([]); }} className="text-gray-500 hover:text-white text-sm mb-2">
+              ← Change hybrid selection
+            </button>
+            <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">AI-Generated Hybrid Ideas</div>
+            <h1 className="text-3xl font-bold">Pick Your Hybrid Banger</h1>
+            <p className="text-gray-400 mt-1">{hybridBase?.template} + {hybridTheme?.theme}</p>
           </div>
 
-          <div>
-            <div className="text-gray-500 text-sm">Hybrid Formula</div>
-            <div className="font-medium">{hybridBase?.template} mechanics + {hybridTheme?.theme} theme</div>
-            <div className="text-gray-400 text-sm">{idea.coreLoop}</div>
-          </div>
+          {generatingIdeas ? (
+            <div className="text-center py-16">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-purple-500"></div>
+              <p className="text-gray-500 mt-6 text-lg">AI is creating innovative hybrid ideas...</p>
+              <p className="text-gray-600 text-sm mt-2">Blending {hybridBase?.template} mechanics with {hybridTheme?.theme} theme</p>
+            </div>
+          ) : generatedIdeas.length > 0 ? (
+            <div className="space-y-4">
+              {generatedIdeas.map((genIdea, i) => (
+                <div
+                  key={i}
+                  className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 hover:border-purple-700 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">{genIdea.name}</h3>
+                      <div className="mt-2 text-gray-300">{genIdea.uniqueHook}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                        genIdea.difficulty === 'Low' ? 'bg-green-900/30 text-green-400' :
+                        genIdea.difficulty === 'Medium' ? 'bg-yellow-900/30 text-yellow-400' :
+                        'bg-red-900/30 text-red-400'
+                      }`}>
+                        {genIdea.difficulty} Difficulty
+                      </div>
+                    </div>
+                  </div>
 
-          <div>
-            <div className="text-gray-500 text-sm">Your Unique Twist</div>
-            <div className="text-gray-300">{idea.uniqueHook}</div>
-          </div>
+                  {/* Theme Integration */}
+                  {genIdea.themeIntegration && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-950/30 to-blue-950/30 border border-purple-900/30 rounded-lg">
+                      <div className="text-xs text-purple-400 mb-1">HYBRID INNOVATION</div>
+                      <div className="text-sm text-gray-300">{genIdea.themeIntegration}</div>
+                    </div>
+                  )}
 
-          <div className="pt-4 border-t border-gray-800">
-            <div className="text-gray-500 text-sm mb-2">This hybrid combines:</div>
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-xl font-bold text-purple-400">{hybridBase?.qualificationScore || '?'}</div>
-                <div className="text-xs text-gray-500">Base Score</div>
+                  {/* Core Loop */}
+                  <div className="mb-4 p-3 bg-[#1a1a1a] rounded-lg">
+                    <div className="text-xs text-gray-500 mb-1">CORE GAMEPLAY LOOP</div>
+                    <div className="text-sm">{genIdea.coreLoop}</div>
+                  </div>
+
+                  {/* Mechanics Grid */}
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="text-xs text-blue-400 mb-2">CORE MECHANICS</div>
+                      <div className="space-y-1">
+                        {genIdea.mechanics.map((m: string, j: number) => (
+                          <div key={j} className="text-sm text-gray-400">• {m}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-yellow-400 mb-2">MONETIZATION</div>
+                      <div className="space-y-1">
+                        {genIdea.monetization.map((m: string, j: number) => (
+                          <div key={j} className="text-sm text-gray-400">• {m}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Why Now */}
+                  <div className="mb-4 p-3 bg-green-950/20 border border-green-900/30 rounded-lg">
+                    <div className="text-xs text-green-400 mb-1">WHY THIS WORKS NOW</div>
+                    <div className="text-sm text-gray-300">{genIdea.whyNow}</div>
+                  </div>
+
+                  {/* Select Button */}
+                  <button
+                    onClick={() => {
+                      // Pre-fill idea with generated hybrid data
+                      setIdea({
+                        name: genIdea.name,
+                        template: hybridBase?.template.toLowerCase().replace(' ', '-') || '',
+                        theme: hybridTheme?.theme || '',
+                        coreLoop: genIdea.coreLoop,
+                        uniqueHook: genIdea.uniqueHook,
+                        monetization: []
+                      })
+                      setSelectedGeneratedIdea(genIdea)
+                      // Go straight to qualification
+                      qualifyIdea()
+                    }}
+                    disabled={loading}
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Generating Plan...' : 'Use This Hybrid & Generate Plan →'}
+                  </button>
+                </div>
+              ))}
+
+              {/* Option to add own twist instead */}
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => {
+                    setGeneratedIdeas([])
+                    // Go back to manual mode
+                  }}
+                  className="text-gray-500 hover:text-white text-sm"
+                >
+                  Or add my own twist instead →
+                </button>
               </div>
-              <div className="text-gray-600">+</div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-blue-400">{hybridTheme?.theme}</div>
-                <div className="text-xs text-gray-500">Trending Theme</div>
+            </div>
+          ) : null}
+        </div>
+      )
+    }
+
+    // Manual mode - original flow
+    if (selectedFormula) {
+      return (
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div>
+            <button onClick={() => setStep(3)} className="text-gray-500 hover:text-white text-sm mb-2">
+              ← Edit details
+            </button>
+            <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Step 4 of 4</div>
+            <h1 className="text-3xl font-bold">Generate Your Game Plan</h1>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 space-y-4">
+            <div>
+              <div className="text-gray-500 text-sm">Game Name</div>
+              <div className="font-bold text-lg">{idea.name || `${hybridTheme?.theme} ${hybridBase?.template}`}</div>
+            </div>
+
+            <div>
+              <div className="text-gray-500 text-sm">Hybrid Formula</div>
+              <div className="font-medium">{hybridBase?.template} mechanics + {hybridTheme?.theme} theme</div>
+              <div className="text-gray-400 text-sm">{idea.coreLoop}</div>
+            </div>
+
+            <div>
+              <div className="text-gray-500 text-sm">Your Unique Twist</div>
+              <div className="text-gray-300">{idea.uniqueHook}</div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-800">
+              <div className="text-gray-500 text-sm mb-2">This hybrid combines:</div>
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-purple-400">{hybridBase?.qualificationScore || '?'}</div>
+                  <div className="text-xs text-gray-500">Base Score</div>
+                </div>
+                <div className="text-gray-600">+</div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-blue-400">{hybridTheme?.theme}</div>
+                  <div className="text-xs text-gray-500">Trending Theme</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {error && (
-          <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-
-        <button
-          onClick={qualifyIdea}
-          disabled={loading}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-        >
-          {loading ? (
-            <>
-              <span className="animate-spin">⟳</span> AI Generating Your Plan...
-            </>
-          ) : (
-            <>Generate Hybrid Game Plan</>
+          {error && (
+            <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
           )}
-        </button>
-      </div>
-    )
+
+          <button
+            onClick={qualifyIdea}
+            disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin">⟳</span> AI Generating Your Plan...
+              </>
+            ) : (
+              <>Generate Hybrid Game Plan</>
+            )}
+          </button>
+        </div>
+      )
+    }
   }
 
-  // Formula Mode - Add Your Twist (Step 2)
+  // Formula Mode - Generated Ideas or Manual Twist (Step 2)
   if (mode === 'formula' && step === 2 && selectedFormula && !result) {
+    // If we're generating ideas or have generated ideas, show them
+    if (generatingIdeas || generatedIdeas.length > 0) {
+      return (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div>
+            <button onClick={() => { setStep(1); setGeneratedIdeas([]); }} className="text-gray-500 hover:text-white text-sm mb-2">
+              ← Pick different formula
+            </button>
+            <div className="text-sm text-gray-500 mb-1 uppercase tracking-wider">AI-Generated Ideas</div>
+            <h1 className="text-3xl font-bold">Pick Your Banger</h1>
+            <p className="text-gray-400 mt-1">AI created these game concepts based on {selectedFormula.groupName || selectedFormula.theme + ' ' + selectedFormula.template}</p>
+          </div>
+
+          {generatingIdeas ? (
+            <div className="text-center py-16">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-green-500"></div>
+              <p className="text-gray-500 mt-6 text-lg">AI is creating banger game ideas...</p>
+              <p className="text-gray-600 text-sm mt-2">Analyzing {selectedFormula.emergingCount} emerging stars and current trends</p>
+            </div>
+          ) : generatedIdeas.length > 0 ? (
+            <div className="space-y-4">
+              {generatedIdeas.map((genIdea, i) => (
+                <div
+                  key={i}
+                  className="bg-[#0f0f0f] border border-gray-800 rounded-xl p-6 hover:border-green-700 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-green-400">{genIdea.name}</h3>
+                      <div className="mt-2 text-gray-300">{genIdea.uniqueHook}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                        genIdea.difficulty === 'Low' ? 'bg-green-900/30 text-green-400' :
+                        genIdea.difficulty === 'Medium' ? 'bg-yellow-900/30 text-yellow-400' :
+                        'bg-red-900/30 text-red-400'
+                      }`}>
+                        {genIdea.difficulty} Difficulty
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Core Loop */}
+                  <div className="mb-4 p-3 bg-[#1a1a1a] rounded-lg">
+                    <div className="text-xs text-gray-500 mb-1">CORE GAMEPLAY LOOP</div>
+                    <div className="text-sm">{genIdea.coreLoop}</div>
+                  </div>
+
+                  {/* Mechanics Grid */}
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="text-xs text-blue-400 mb-2">CORE MECHANICS</div>
+                      <div className="space-y-1">
+                        {genIdea.mechanics.map((m: string, j: number) => (
+                          <div key={j} className="text-sm text-gray-400">• {m}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-yellow-400 mb-2">MONETIZATION</div>
+                      <div className="space-y-1">
+                        {genIdea.monetization.map((m: string, j: number) => (
+                          <div key={j} className="text-sm text-gray-400">• {m}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Why Now */}
+                  <div className="mb-4 p-3 bg-purple-950/20 border border-purple-900/30 rounded-lg">
+                    <div className="text-xs text-purple-400 mb-1">WHY THIS WORKS NOW</div>
+                    <div className="text-sm text-gray-300">{genIdea.whyNow}</div>
+                  </div>
+
+                  {/* Select Button */}
+                  <button
+                    onClick={() => {
+                      // Pre-fill idea with generated data
+                      setIdea({
+                        name: genIdea.name,
+                        template: selectedFormula.template.toLowerCase().replace(' ', '-'),
+                        theme: selectedFormula.theme,
+                        coreLoop: genIdea.coreLoop,
+                        uniqueHook: genIdea.uniqueHook,
+                        monetization: []
+                      })
+                      setSelectedGeneratedIdea(genIdea)
+                      setStep(3) // Skip to final validation
+                    }}
+                    className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors"
+                  >
+                    Use This Idea →
+                  </button>
+                </div>
+              ))}
+
+              {/* Option to add own twist instead */}
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => {
+                    setGeneratedIdeas([])
+                    selectFormula(selectedFormula)
+                  }}
+                  className="text-gray-500 hover:text-white text-sm"
+                >
+                  Or add my own twist instead →
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )
+    }
+
+    // Manual twist mode (original flow)
+
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <div>

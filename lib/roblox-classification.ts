@@ -748,3 +748,326 @@ export function findOverlappingPatterns(classifications: any[]): {
 export function generateSubVertical(vertical: string, theme: string): string {
   return `${theme} ${vertical}`
 }
+
+// ============================================
+// UI-FRIENDLY EXPORTS
+// These transform the constants into arrays the UI can consume directly
+// ============================================
+
+/**
+ * Template options for the Idea Lab template picker
+ */
+export const UI_TEMPLATES = [
+  { id: 'simulator', label: 'Simulator', desc: 'Click/collect/upgrade loops', complexity: 'LOW-MEDIUM' },
+  { id: 'tower-defense', label: 'Tower Defense', desc: 'Place units, defend waves', complexity: 'MEDIUM-HIGH' },
+  { id: 'tycoon', label: 'Tycoon', desc: 'Build and manage income', complexity: 'LOW-MEDIUM' },
+  { id: 'idle-clicker', label: 'Idle/Clicker', desc: 'Minimal interaction, offline progress', complexity: 'LOW' },
+  { id: 'pet-collection', label: 'Pet Collection', desc: 'Hatch, collect, evolve pets', complexity: 'MEDIUM' },
+  { id: 'gacha-collection', label: 'Gacha/Collection', desc: 'Roll/spin for items, collect, trade', complexity: 'LOW-MEDIUM' },
+  { id: 'horror', label: 'Horror/Escape', desc: 'Scary survival/escape', complexity: 'MEDIUM' },
+  { id: 'obby', label: 'Obby', desc: 'Obstacle courses and platforming', complexity: 'LOW-MEDIUM' },
+  { id: 'action-rpg', label: 'Action RPG', desc: 'Combat, loot, level progression', complexity: 'HIGH' },
+  { id: 'pvp-arena', label: 'PvP Arena', desc: 'Player vs player combat', complexity: 'MEDIUM-HIGH' },
+  { id: 'wave-survival', label: 'Wave Survival', desc: 'Survive waves, upgrade between rounds', complexity: 'MEDIUM' },
+  { id: 'roleplay', label: 'Roleplay', desc: 'Social life simulation', complexity: 'HIGH' },
+  { id: 'merge', label: 'Merge Game', desc: 'Combine items to evolve', complexity: 'LOW' },
+  { id: 'hangout', label: 'Hangout/Social', desc: 'Social space, mini-games', complexity: 'MEDIUM' },
+  { id: 'other', label: 'Other', desc: 'Something different', complexity: 'MEDIUM' },
+] as const
+
+/**
+ * Theme options for the Idea Lab theme picker
+ */
+export const UI_THEMES = [
+  'Anime', 'Meme/Brainrot', 'Horror', 'Fantasy', 'Sci-Fi',
+  'Cute/Kawaii', 'Pets/Animals', 'Military', 'Superhero',
+  'Nature/Farm', 'Food', 'Sports', 'Realistic',
+  'Pirates', 'Zombies', 'Other'
+] as const
+
+/**
+ * Category filter options for Emerging/Discover pages
+ */
+export const UI_CATEGORIES = [
+  { id: '', label: 'All Categories' },
+  { id: 'simulator', label: 'Simulator' },
+  { id: 'tower defense', label: 'Tower Defense' },
+  { id: 'tycoon', label: 'Tycoon' },
+  { id: 'anime', label: 'Anime' },
+  { id: 'horror', label: 'Horror' },
+  { id: 'obby', label: 'Obby' },
+  { id: 'roleplay', label: 'Roleplay' },
+  { id: 'fighting', label: 'Fighting/Combat' },
+  { id: 'pet', label: 'Pet Collection' },
+] as const
+
+/**
+ * Monetization options for Idea Lab
+ */
+export const UI_MONETIZATION = [
+  { id: 'multiplier-pass', label: '2x/3x Earnings Pass', robux: '99-299' },
+  { id: 'auto-collect', label: 'Auto-Collect Pass', robux: '149-399' },
+  { id: 'premium-areas', label: 'Premium Areas', robux: '199-499' },
+  { id: 'vip-bundle', label: 'VIP Bundle', robux: '399-999' },
+  { id: 'gacha', label: 'Gacha/Loot Crates', robux: '25-100/spin' },
+  { id: 'battle-pass', label: 'Battle/Season Pass', robux: '399-799' },
+  { id: 'extra-storage', label: 'Extra Storage/Slots', robux: '49-199' },
+  { id: 'skip-timers', label: 'Skip Timers', robux: '25-99' },
+  { id: 'exclusive-items', label: 'Exclusive Tools/Items', robux: '99-299' },
+  { id: 'trading', label: 'Trading System Pass', robux: '99-199' },
+  { id: 'premium-payouts', label: 'Premium Payouts', robux: 'Passive' },
+] as const
+
+/**
+ * Pattern detection keywords for game classification by name/genre
+ */
+export const PATTERN_DETECTION: Record<string, {
+  keywords: string[]
+  pattern: string
+  color: string
+  vertical: string
+}> = {
+  'anime-td': {
+    keywords: ['anime', 'tower defense', 'defenders', 'adventures', 'all star'],
+    pattern: 'Anime TD',
+    color: 'text-purple-400 bg-purple-500/20',
+    vertical: 'Tower Defense'
+  },
+  'simulator': {
+    keywords: ['simulator', 'sim', 'clicker', 'legends', 'grind'],
+    pattern: 'Simulator',
+    color: 'text-blue-400 bg-blue-500/20',
+    vertical: 'Simulator'
+  },
+  'pet': {
+    keywords: ['pet', 'egg', 'hatch', 'adopt'],
+    pattern: 'Pet Sim',
+    color: 'text-pink-400 bg-pink-500/20',
+    vertical: 'Pet Collection'
+  },
+  'horror': {
+    keywords: ['doors', 'horror', 'scary', 'mimic', 'backrooms', 'escape', 'survive'],
+    pattern: 'Horror',
+    color: 'text-red-400 bg-red-500/20',
+    vertical: 'Horror/Escape'
+  },
+  'tycoon': {
+    keywords: ['tycoon', 'restaurant', 'retail', 'factory', 'empire'],
+    pattern: 'Tycoon',
+    color: 'text-yellow-400 bg-yellow-500/20',
+    vertical: 'Tycoon'
+  },
+  'roleplay': {
+    keywords: ['brookhaven', 'bloxburg', 'roleplay', 'rp', 'avenue', 'city'],
+    pattern: 'Roleplay',
+    color: 'text-green-400 bg-green-500/20',
+    vertical: 'Roleplay'
+  },
+  'fighting': {
+    keywords: ['fruits', 'fighting', 'combat', 'legacy', 'piece', 'arsenal', 'battlegrounds'],
+    pattern: 'Combat',
+    color: 'text-orange-400 bg-orange-500/20',
+    vertical: 'Fighting'
+  },
+  'obby': {
+    keywords: ['obby', 'tower of', 'obstacle', 'parkour'],
+    pattern: 'Obby',
+    color: 'text-cyan-400 bg-cyan-500/20',
+    vertical: 'Obby/Platformer'
+  },
+  'gacha': {
+    keywords: ['gacha', 'pull', 'summon', 'banner', 'luck'],
+    pattern: 'Gacha',
+    color: 'text-indigo-400 bg-indigo-500/20',
+    vertical: 'Gacha/Collection'
+  },
+  'survival': {
+    keywords: ['survival', 'waves', 'zombie', 'defend'],
+    pattern: 'Survival',
+    color: 'text-amber-400 bg-amber-500/20',
+    vertical: 'Wave Survival'
+  }
+}
+
+/**
+ * Vertical-specific strategies: retention, monetization, and viral mechanics
+ * This is the pattern library used for strategy display and idea generation
+ */
+export const VERTICAL_STRATEGIES: Record<string, {
+  retention: string[]
+  monetization: string[]
+  viral: string[]
+  coreLoop: string
+  coreRequirements: string[]
+  pitfalls: string[]
+}> = {
+  'Simulator': {
+    retention: ['Prestige/rebirth system', 'Automation unlocks', 'Competitive leaderboards', 'Daily rewards', 'World progression'],
+    monetization: ['2x/3x earnings pass', 'Auto-collect pass', 'Premium areas', 'Exclusive tools', 'VIP bundle'],
+    viral: ['Big number flexing', 'Speedrun prestige', 'Leaderboard competition', 'Promo codes'],
+    coreLoop: 'Collect → Upgrade → Prestige → Repeat',
+    coreRequirements: ['Clear progression path', 'Visual feedback (numbers)', 'Meaningful prestige', 'Automation as reward', 'Mobile-friendly UI'],
+    pitfalls: ['Wall hits too early', 'Prestige feels unrewarding', 'No visual variety', 'P2W perception']
+  },
+  'Tower Defense': {
+    retention: ['Unit collection', 'Challenge modes', 'Seasonal events', 'Clan/guild systems', 'Meta progression'],
+    monetization: ['Gacha/crate units', 'Extra unit slots', 'Double rewards pass', 'Battle pass', 'VIP servers'],
+    viral: ['Trading communities', 'Tier list discussions', 'Update hype cycles', 'YouTuber summons'],
+    coreLoop: 'Place → Defend → Upgrade → Collect Units',
+    coreRequirements: ['Unit variety + balance', 'Progression depth', 'Trade system', 'Regular content updates', 'Co-op multiplayer'],
+    pitfalls: ['Gacha too predatory', 'Power creep', 'No content updates', 'Unbalanced meta']
+  },
+  'Tycoon': {
+    retention: ['Prestige/rebirth system', 'Automation unlocks', 'Leaderboards', 'Daily rewards', 'Building customization'],
+    monetization: ['2x earnings pass', 'Auto-collect', 'Premium areas', 'Exclusive machines', 'VIP bundle'],
+    viral: ['Building showcases', 'Speedrun prestige', 'Income leaderboards', 'Promo codes'],
+    coreLoop: 'Build → Collect → Automate → Prestige',
+    coreRequirements: ['Clear upgrade path', 'Visual feedback', 'Meaningful automation', 'Good onboarding'],
+    pitfalls: ['Too slow early game', 'No visual progression', 'Confusing layout', 'Stale content']
+  },
+  'Pet Collection': {
+    retention: ['Egg hatching excitement', 'Collection completion', 'Evolution/upgrade paths', 'Limited-time pets', 'Trading economy'],
+    monetization: ['Premium eggs', 'Hatch speed boosts', 'Extra pet slots', 'Trading passes', 'Luck boosts'],
+    viral: ['Rare pet flexing', 'YouTuber giveaways', 'Trading communities', 'Egg opening videos'],
+    coreLoop: 'Hatch → Evolve → Collect → Trade',
+    coreRequirements: ['Rarity tiers', 'Trade system', 'Evolution paths', 'Limited-time pets', 'Visual variety'],
+    pitfalls: ['Values crash too fast', 'Duping exploits', 'Market saturation', 'Boring progression']
+  },
+  'Horror/Escape': {
+    retention: ['Story/lore reveals', 'Multiple endings', 'Difficulty modes', 'Chapter updates', 'Unlockable content'],
+    monetization: ['Skip chapters', 'Cosmetics/skins', 'Extra lives/revives', 'Exclusive chapters', 'Hint system'],
+    viral: ['Jump scare reactions', 'Lore theory videos', 'Speedrun community', 'Clip sharing'],
+    coreLoop: 'Enter → Survive → Escape → Unlock',
+    coreRequirements: ['Atmosphere and tension', 'Procedural elements', 'Replayability', 'Good sound design'],
+    pitfalls: ['Too short', 'Jump scare spam', 'No replayability', 'Poor mobile controls']
+  },
+  'Obby/Platformer': {
+    retention: ['Stage progression', 'Time challenges', 'Cosmetics unlocks', 'Leaderboards', 'Daily stages'],
+    monetization: ['Skip stage pass', 'Cosmetics', 'Checkpoint saves', 'Speed boosts', 'VIP stages'],
+    viral: ['Speedruns', 'Fail compilations', 'Challenge videos', 'Rage moments'],
+    coreLoop: 'Jump → Checkpoint → Complete → Unlock',
+    coreRequirements: ['Smooth controls', 'Fair difficulty curve', 'Checkpoint system', 'Visual variety'],
+    pitfalls: ['Unfair jumps', 'No checkpoints', 'Repetitive visuals', 'Too easy or too hard']
+  },
+  'Action RPG': {
+    retention: ['Loot drops', 'Level progression', 'Boss fights', 'Rare items', 'Skill trees'],
+    monetization: ['XP boosts', 'Premium weapons', 'Extra inventory', 'Rerolls', 'Battle pass'],
+    viral: ['PvP montages', 'Rare drops', 'Boss kill videos', 'Build showcases'],
+    coreLoop: 'Fight → Loot → Level → Face Harder Content',
+    coreRequirements: ['Combat feel', 'Loot variety', 'Progression depth', 'Boss encounters'],
+    pitfalls: ['Combat feels floaty', 'Too grindy', 'No endgame', 'Unbalanced PvP']
+  },
+  'PvP Arena': {
+    retention: ['Ranking system', 'Character unlocks', 'Seasonal resets', 'Cosmetic rewards', 'Skill-based matchmaking'],
+    monetization: ['Cosmetics/skins', 'Battle pass', 'Character unlocks', 'Emotes', 'VIP servers'],
+    viral: ['PvP montages', 'Tournament clips', 'Combo videos', 'Rank up celebrations'],
+    coreLoop: 'Fight → Win → Rank Up → Unlock',
+    coreRequirements: ['Fair matchmaking', 'Responsive controls', 'Character variety', 'Spectator mode'],
+    pitfalls: ['Laggy combat', 'P2W characters', 'Toxic community', 'No anti-cheat']
+  },
+  'Roleplay': {
+    retention: ['Housing/building', 'Social connections', 'Jobs/economy', 'Seasonal updates', 'Vehicle collection'],
+    monetization: ['Premium homes', 'Exclusive vehicles', 'Special jobs', 'Cosmetics', 'Furniture packs'],
+    viral: ['Roleplay content', 'Building showcases', 'Drama/story content', 'House tours'],
+    coreLoop: 'Explore → Interact → Build → Socialize',
+    coreRequirements: ['Large world', 'Building tools', 'Economy system', 'Social features'],
+    pitfalls: ['Empty servers', 'Nothing to do alone', 'Toxic players', 'Performance issues']
+  },
+  'Gacha/Collection': {
+    retention: ['Collection completion', 'Limited-time banners', 'Pity system', 'Evolution paths', 'Trading'],
+    monetization: ['Premium currency', 'Extra pulls', 'Guaranteed banners', 'Storage expansion', 'Speed boosts'],
+    viral: ['Pull videos', 'Collection showcases', 'Lucky moments', 'Trading communities'],
+    coreLoop: 'Spin → Collect → Trade → Complete Sets',
+    coreRequirements: ['Fair rates', 'Pity system', 'Visual variety', 'Trade system'],
+    pitfalls: ['Rates too low', 'No pity system', 'Values unstable', 'Too many items']
+  },
+  'Wave Survival': {
+    retention: ['Upgrade progression', 'Wave milestones', 'Unlockable characters', 'Leaderboards', 'Co-op'],
+    monetization: ['Double rewards', 'Premium characters', 'Extra lives', 'Skip waves', 'Battle pass'],
+    viral: ['High wave records', 'Close calls', 'Co-op clutches', 'Build showcases'],
+    coreLoop: 'Survive → Upgrade → Face Harder Waves',
+    coreRequirements: ['Escalating difficulty', 'Meaningful upgrades', 'Visual variety', 'Performance optimization'],
+    pitfalls: ['Repetitive waves', 'No sense of progress', 'Too easy early', 'Lag on high waves']
+  },
+  'Idle/Clicker': {
+    retention: ['Offline progress', 'Prestige layers', 'Achievement milestones', 'Daily bonuses'],
+    monetization: ['Speed multipliers', 'Auto-clickers', 'Premium content', 'Ad-free pass'],
+    viral: ['Big numbers', 'Prestige speedruns', 'Milestone celebrations'],
+    coreLoop: 'Click → Earn → Upgrade → Prestige',
+    coreRequirements: ['Satisfying clicks', 'Good number scaling', 'Offline earnings', 'Clear milestones'],
+    pitfalls: ['Boring early game', 'Wall too soon', 'No visual feedback', 'Too idle too fast']
+  },
+  'Merge Game': {
+    retention: ['Discovery of new items', 'Chain reactions', 'Board expansion', 'Daily puzzles'],
+    monetization: ['Extra board space', 'Speed boosts', 'Premium items', 'Undo moves'],
+    viral: ['Satisfying merges', 'Chain combos', 'Discovery moments'],
+    coreLoop: 'Merge → Evolve → Discover → Expand',
+    coreRequirements: ['Satisfying merge feel', 'Clear tier system', 'Board management', 'Visual feedback'],
+    pitfalls: ['Board fills too fast', 'Boring higher tiers', 'No strategy depth', 'Too random']
+  }
+}
+
+/**
+ * Detect game pattern/vertical from name and genre
+ */
+export function detectGamePattern(name: string, genre?: string): { pattern: string; color: string; vertical: string } | null {
+  const searchText = `${name} ${genre || ''}`.toLowerCase()
+  for (const [, data] of Object.entries(PATTERN_DETECTION)) {
+    for (const keyword of data.keywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        return { pattern: data.pattern, color: data.color, vertical: data.vertical }
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Get strategy data for a detected pattern
+ */
+export function getVerticalStrategy(pattern: string): {
+  retention: string[]
+  monetization: string[]
+  viral: string[]
+  coreLoop: string
+  coreRequirements: string[]
+  pitfalls: string[]
+} | null {
+  // Try direct match first
+  if (VERTICAL_STRATEGIES[pattern]) return VERTICAL_STRATEGIES[pattern]
+
+  // Map pattern display names to vertical keys
+  const patternMap: Record<string, string> = {
+    'Anime TD': 'Tower Defense',
+    'Pet Sim': 'Pet Collection',
+    'Horror': 'Horror/Escape',
+    'Combat': 'Action RPG',
+    'Obby': 'Obby/Platformer',
+    'Gacha': 'Gacha/Collection',
+    'Survival': 'Wave Survival',
+  }
+
+  const mapped = patternMap[pattern]
+  if (mapped && VERTICAL_STRATEGIES[mapped]) return VERTICAL_STRATEGIES[mapped]
+
+  return null
+}
+
+/**
+ * Get complexity info (color, label, dev time) for a complexity level
+ */
+export function getComplexityInfo(complexity: string): {
+  label: string
+  color: string
+  devTime: string
+  teamSize: string
+} {
+  const info: Record<string, { label: string; color: string; devTime: string; teamSize: string }> = {
+    'LOW': { label: 'Low', color: 'text-green-400 bg-green-500/20', devTime: '2-4 weeks', teamSize: 'Solo' },
+    'LOW-MEDIUM': { label: 'Low-Med', color: 'text-emerald-400 bg-emerald-500/20', devTime: '4-8 weeks', teamSize: 'Solo or 2' },
+    'MEDIUM': { label: 'Medium', color: 'text-yellow-400 bg-yellow-500/20', devTime: '8-12 weeks', teamSize: '2-3' },
+    'MEDIUM-HIGH': { label: 'Med-High', color: 'text-orange-400 bg-orange-500/20', devTime: '12-20 weeks', teamSize: '3-5' },
+    'HIGH': { label: 'High', color: 'text-red-400 bg-red-500/20', devTime: '20+ weeks', teamSize: '5+' },
+  }
+  return info[complexity] || info['MEDIUM']
+}

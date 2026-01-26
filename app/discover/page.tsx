@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { detectGamePattern, getVerticalStrategy } from '@/lib/roblox-classification'
 
 interface Game {
   placeId: string
@@ -18,102 +19,15 @@ interface Game {
   dates: { created: string }
 }
 
-const PATTERN_KEYWORDS: Record<string, { keywords: string[]; pattern: string; color: string }> = {
-  'anime-td': {
-    keywords: ['anime', 'tower defense', 'defenders', 'adventures'],
-    pattern: 'Anime TD',
-    color: 'text-purple-400 bg-purple-500/20'
-  },
-  'simulator': {
-    keywords: ['simulator', 'sim', 'clicker', 'legends'],
-    pattern: 'Simulator',
-    color: 'text-blue-400 bg-blue-500/20'
-  },
-  'pet': {
-    keywords: ['pet', 'egg', 'hatch'],
-    pattern: 'Pet Sim',
-    color: 'text-pink-400 bg-pink-500/20'
-  },
-  'horror': {
-    keywords: ['doors', 'horror', 'scary', 'mimic', 'backrooms'],
-    pattern: 'Horror',
-    color: 'text-red-400 bg-red-500/20'
-  },
-  'tycoon': {
-    keywords: ['tycoon', 'restaurant', 'retail', 'factory'],
-    pattern: 'Tycoon',
-    color: 'text-yellow-400 bg-yellow-500/20'
-  },
-  'roleplay': {
-    keywords: ['brookhaven', 'bloxburg', 'roleplay', 'rp', 'avenue'],
-    pattern: 'Roleplay',
-    color: 'text-green-400 bg-green-500/20'
-  },
-  'fighting': {
-    keywords: ['fruits', 'fighting', 'combat', 'legacy', 'piece', 'arsenal'],
-    pattern: 'Combat',
-    color: 'text-orange-400 bg-orange-500/20'
-  },
-  'obby': {
-    keywords: ['obby', 'tower of', 'obstacle'],
-    pattern: 'Obby',
-    color: 'text-cyan-400 bg-cyan-500/20'
-  }
-}
-
+// Pattern detection, strategies, and categories now come from the classification system
 function detectPattern(game: Game): { pattern: string; color: string } | null {
-  const searchText = `${game.name} ${game.genre || ''}`.toLowerCase()
-  for (const [, data] of Object.entries(PATTERN_KEYWORDS)) {
-    for (const keyword of data.keywords) {
-      if (searchText.includes(keyword.toLowerCase())) {
-        return { pattern: data.pattern, color: data.color }
-      }
-    }
-  }
-  return null
+  return detectGamePattern(game.name, game.genre || '')
 }
 
-const PATTERN_STRATEGIES: Record<string, { retention: string[]; monetization: string[]; viral: string[] }> = {
-  'Anime TD': {
-    retention: ['Gacha/summon system', 'Character collection', 'Co-op multiplayer', 'Meta progression'],
-    monetization: ['Premium currency', 'Battle passes', 'Limited banners', 'VIP servers'],
-    viral: ['Trading communities', 'Tier lists', 'Update hype', 'YouTuber summons']
-  },
-  'Simulator': {
-    retention: ['Rebirth system', 'Automation unlocks', 'Leaderboards', 'Daily rewards'],
-    monetization: ['x2 earnings pass', 'Auto-collect', 'Premium areas', 'Exclusive tools'],
-    viral: ['Big numbers', 'Speedrun prestige', 'Leaderboard competition']
-  },
-  'Pet Sim': {
-    retention: ['Pet collection', 'Egg hatching', 'Fusion system', 'Trading', 'Events'],
-    monetization: ['Luck boosts', 'Premium eggs', 'VIP areas', 'Event passes'],
-    viral: ['Rare pet flexing', 'Giveaways', 'Egg opening videos']
-  },
-  'Horror': {
-    retention: ['Procedural elements', 'Lore discovery', 'Challenge modes', 'Unlockables'],
-    monetization: ['Cosmetics', 'Revives', 'Hint systems', 'Story DLC'],
-    viral: ['Jump scare clips', 'Lore theories', 'Speedruns']
-  },
-  'Tycoon': {
-    retention: ['Prestige system', 'Automation', 'Leaderboards', 'Daily rewards'],
-    monetization: ['x2 earnings', 'Auto-collect', 'Premium areas'],
-    viral: ['Building showcases', 'Speedrun prestige']
-  },
-  'Roleplay': {
-    retention: ['House building', 'Vehicle collection', 'Friend systems', 'Seasonal updates'],
-    monetization: ['Premium currency', 'House packs', 'Vehicles', 'Clothing'],
-    viral: ['RP content', 'Building showcases', 'Drama clips']
-  },
-  'Combat': {
-    retention: ['Ability unlocks', 'Rare items', 'PvP ranking', 'Boss fights'],
-    monetization: ['Rerolls', 'XP boosts', 'Private servers'],
-    viral: ['PvP montages', 'Rare drops', 'Update trailers']
-  },
-  'Obby': {
-    retention: ['Stage progression', 'Time challenges', 'Cosmetics', 'Leaderboards'],
-    monetization: ['Skip stage', 'Cosmetics', 'Checkpoint saves'],
-    viral: ['Speedruns', 'Fail compilations']
-  }
+function getPatternStrategy(pattern: string): { retention: string[]; monetization: string[]; viral: string[] } | null {
+  const strategy = getVerticalStrategy(pattern)
+  if (!strategy) return null
+  return { retention: strategy.retention, monetization: strategy.monetization, viral: strategy.viral }
 }
 
 const CATEGORIES = [
@@ -124,6 +38,9 @@ const CATEGORIES = [
   { id: 'horror', label: 'Horror' },
   { id: 'tycoon', label: 'Tycoon' },
   { id: 'roleplay', label: 'Roleplay' },
+  { id: 'pet', label: 'Pet Collection' },
+  { id: 'obby', label: 'Obby' },
+  { id: 'fighting', label: 'Fighting' },
 ]
 
 export default function DiscoverPage() {
@@ -241,7 +158,7 @@ export default function DiscoverPage() {
               const isSelected = selectedGames.includes(game.placeId)
               const isExpanded = expandedGame === game.placeId
               const detectedPattern = detectPattern(game)
-              const strategies = detectedPattern ? PATTERN_STRATEGIES[detectedPattern.pattern] : null
+              const strategies = detectedPattern ? getPatternStrategy(detectedPattern.pattern) : null
               const ccu = game.metrics?.currentPlayers || 0
               const visits = game.metrics?.visits || 0
               const likeRatio = game.metrics?.likeRatio || '0'

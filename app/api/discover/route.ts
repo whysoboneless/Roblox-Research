@@ -114,6 +114,17 @@ const CURATED_GAMES: Record<string, { placeId: string; name: string }[]> = {
     { placeId: '7991599693', name: 'Tower of Hell' },
     { placeId: '3527629287', name: 'Escape Room' },
   ],
+  'pet': [
+    { placeId: '8737899170', name: 'Pet Simulator 99' },
+    { placeId: '6284583030', name: 'Muscle Legends' },
+    { placeId: '3956818381', name: 'Ninja Legends' },
+  ],
+  'fighting': [
+    { placeId: '2753915549', name: 'Blox Fruits' },
+    { placeId: '286090429', name: 'Arsenal' },
+    { placeId: '2809202155', name: 'Anime Fighting Simulator' },
+    { placeId: '4520749081', name: 'King Legacy' },
+  ],
 }
 
 function getCuratedGames(query: string): string[] {
